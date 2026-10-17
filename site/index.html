@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Seri Iskandar Weather Monitor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#f3f6f9; --panel:#ffffff; --ink:#0f1c2b; --muted:#5b6b7c; --line:#e1e8ef;
+  --accent:#0b72b9; --actual:#0f1c2b; --fc:#e8833a; --rain:#2d9cdb; --hum:#14a38b; --wind:#7b61ff;
+  --green:#1f9d55; --amber:#d99100; --red:#d64545; --chip:#eef3f8;
+  --shadow:0 1px 2px rgba(15,28,43,.06),0 4px 16px rgba(15,28,43,.05);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0c141d; --panel:#131e2a; --ink:#e7eef5; --muted:#93a4b5; --line:#22313f;
+  --accent:#4fb0f0; --actual:#e7eef5; --fc:#f5a25d; --chip:#1b2836; --shadow:none;}}
+:root[data-theme="dark"]{--bg:#0c141d; --panel:#131e2a; --ink:#e7eef5; --muted:#93a4b5; --line:#22313f;
+  --accent:#4fb0f0; --actual:#e7eef5; --fc:#f5a25d; --chip:#1b2836; --shadow:none;}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 Inter,system-ui,sans-serif}
+.wrap{max-width:1180px;margin:0 auto;padding:24px 16px 48px}
+header{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;justify-content:space-between;margin-bottom:18px}
+h1{font-size:26px;margin:0;letter-spacing:-.02em}
+.sub{color:var(--muted);font-size:14px}
+.pill{display:inline-flex;align-items:center;gap:8px;background:var(--chip);border-radius:999px;padding:6px 12px;font-size:13px;color:var(--muted)}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 0 4px rgba(31,157,85,.15)}
+button.theme{border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:8px;padding:6px 10px;cursor:pointer}
+.grid{display:grid;gap:16px}
+.g4{grid-template-columns:repeat(4,1fr)}
+.g2{grid-template-columns:1.4fr 1fr}
+@media(max-width:900px){.g4{grid-template-columns:repeat(2,1fr)}.g2{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;box-shadow:var(--shadow);min-width:0}
+.card h2{font-size:16px;margin:0 0 4px}
+.card .hint{color:var(--muted);font-size:13px;margin:0 0 14px}
+.stat .label{color:var(--muted);font-size:13px}
+.stat .value{font-size:30px;font-weight:700;letter-spacing:-.02em}
+.stat .unit{font-size:15px;color:var(--muted);font-weight:500;margin-left:2px}
+.alert{display:flex;gap:16px;align-items:center;border-radius:14px;padding:16px 18px;margin:16px 0;color:#fff}
+.alert.green{background:var(--green)}.alert.amber{background:var(--amber)}.alert.red{background:var(--red)}
+.lamp{width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.25);display:grid;place-items:center;flex:none}
+.lamp i{width:20px;height:20px;border-radius:50%;background:#fff;display:block}
+.alert.red .lamp i{animation:pulse 1.2s infinite}
+@keyframes pulse{50%{opacity:.35}}
+.alert b{font-size:17px;display:block}
+.alert span{opacity:.9;font-size:14px}
+.chartbox{position:relative;height:300px}
+.chartbox.sm{height:240px}
+.tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.tabs button{border:1px solid var(--line);background:var(--chip);color:var(--ink);border-radius:8px;padding:6px 12px;font:inherit;font-size:13px;cursor:pointer}
+.tabs button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.row{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;align-items:center}
+.kpis{display:flex;gap:18px;flex-wrap:wrap;font-size:13px;color:var(--muted);margin-top:10px}
+.kpis b{color:var(--ink);font-family:"JetBrains Mono",monospace;font-size:14px}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+th{color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.04em}
+td{font-family:"JetBrains Mono",monospace;font-size:13px}
+td:first-child{font-family:Inter,sans-serif}
+.scroll{overflow-x:auto}
+.good{color:var(--green)}.bad{color:var(--red)}
+.section{margin-top:16px}
+.foot{margin-top:28px;color:var(--muted);font-size:13px;display:flex;flex-wrap:wrap;gap:6px 18px}
+.foot a{color:var(--accent)}
+.empty{color:var(--muted);font-size:14px;padding:20px 0}
+.matrix{display:grid;grid-template-columns:auto 1fr 1fr;gap:6px;font-size:13px;margin-top:6px}
+.matrix div{background:var(--chip);border-radius:8px;padding:10px;text-align:center}
+.matrix .h{background:none;color:var(--muted);font-weight:600;padding:6px}
+.matrix .n{font-family:"JetBrains Mono",monospace;font-size:18px;font-weight:600}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Seri Iskandar Weather Monitor</h1>
+      <div class="sub">Seri Iskandar, Perak, Malaysia &middot; 4.36°N, 100.97°E &middot; updated every 30 minutes</div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <span class="pill"><span class="dot"></span><span id="status">Loading...</span></span>
+      <button class="theme" id="themeBtn" title="Toggle light/dark">◐</button>
+    </div>
+  </header>
+
+  <div class="grid g4" id="now"></div>
+  <div id="alert"></div>
+
+  <div class="card">
+    <div class="row"><div><h2>Next 24 hours</h2><p class="hint">Latest Open-Meteo forecast: temperature (line), rainfall (bars) and chance of rain (dashed).</p></div></div>
+    <div class="chartbox"><canvas id="c24"></canvas></div>
+  </div>
+
+  <div class="grid g2 section">
+    <div class="card">
+      <h2>Forecast vs actual</h2>
+      <p class="hint">How the forecast made <b id="hzTxt">24 hours</b> earlier compares with what actually happened.</p>
+      <div class="row">
+        <div class="tabs" id="varTabs"></div>
+        <div class="tabs" id="hzTabs"></div>
+      </div>
+      <div class="chartbox"><canvas id="cfa"></canvas></div>
+      <div class="kpis" id="faKpis"></div>
+    </div>
+    <div class="card">
+      <h2>Error grows with lead time</h2>
+      <p class="hint">Mean absolute error (MAE) and bias for every forecast horizon, 1 to 72 hours ahead.</p>
+      <div class="chartbox"><canvas id="chz"></canvas></div>
+    </div>
+  </div>
+
+  <div class="card section">
+    <h2>Forecast accuracy by horizon</h2>
+    <p class="hint">Error = forecast minus actual. Bias above 0 means the forecast runs too high.</p>
+    <div class="scroll"><table id="accTable"></table></div>
+  </div>
+
+  <div class="grid g2 section">
+    <div class="card">
+      <h2>Did it rain when the forecast said it would?</h2>
+      <p class="hint">An hour counts as rainy when it has at least <span id="thr"></span> mm. POD = rain events caught, FAR = false alarms, CSI = overall rain skill, Brier = error of the chance-of-rain value (0 is perfect).</p>
+      <div class="scroll"><table id="rainTable"></table></div>
+    </div>
+    <div class="card">
+      <h2>Rain event matrix (all horizons)</h2>
+      <p class="hint">Every forecast hour compared with the actual hour.</p>
+      <div class="matrix" id="matrix"></div>
+    </div>
+  </div>
+
+  <div class="grid g2 section">
+    <div class="card">
+      <h2>Next-day forecast check</h2>
+      <p class="hint">Forecast issued around 08:00 the day before vs the actual daily values.</p>
+      <div class="scroll"><table id="ndTable"></table></div>
+    </div>
+    <div class="card">
+      <h2>Daily summary (actual)</h2>
+      <p class="hint">Complete days only.</p>
+      <div class="scroll"><table id="dayTable"></table></div>
+    </div>
+  </div>
+
+  <div class="card section">
+    <h2>Data collection log</h2>
+    <p class="hint">The collector runs on GitHub Actions every 30 minutes and stores one forecast per hour.</p>
+    <div class="grid g4" id="logStats"></div>
+    <div class="scroll" style="margin-top:14px"><table id="runTable"></table></div>
+  </div>
+
+  <div class="foot">
+    <span>Weather data by <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo.com</a> (CC BY 4.0)</span>
+    <span>Download: <a href="weather.db">weather.db</a> &middot; <a href="data/observations.csv">observations.csv</a> &middot; <a href="data/forecasts.csv">forecasts.csv</a> &middot; <a href="data/daily_forecasts.csv">daily_forecasts.csv</a></span>
+    <span id="gen"></span>
+  </div>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const f1 = (v, d = 1) => v == null || isNaN(v) ? "–" : Number(v).toFixed(d);
+const hhmm = t => t.slice(11, 16);
+const dayLbl = t => new Date(t + ":00").toLocaleDateString("en-MY", {weekday: "short", day: "numeric", month: "short"});
+const VARS = {temperature: ["Temperature", "°C"], humidity: ["Humidity", "%"], rain: ["Rainfall", "mm"], wind: ["Wind", "km/h"]};
+const COLORS = {temperature: "--fc", humidity: "--hum", rain: "--rain", wind: "--wind"};
+let D, charts = {}, sel = {v: "temperature", h: 24};
+
+// theme toggle (remembered per browser)
+try { const t = localStorage.getItem("theme"); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
+$("#themeBtn").onclick = () => {
+  const dark = document.documentElement.dataset.theme
+    ? document.documentElement.dataset.theme === "dark"
+    : matchMedia("(prefers-color-scheme: dark)").matches;
+  document.documentElement.dataset.theme = dark ? "light" : "dark";
+  try { localStorage.setItem("theme", document.documentElement.dataset.theme); } catch (e) {}
+  drawAll();
+};
+
+function baseOpts(yTitle) {
+  Chart.defaults.color = css("--muted");
+  Chart.defaults.font.family = "Inter, system-ui, sans-serif";
+  return {
+    responsive: true, maintainAspectRatio: false, interaction: {mode: "index", intersect: false},
+    plugins: {legend: {labels: {boxWidth: 12, boxHeight: 12, usePointStyle: true}}},
+    scales: {
+      x: {grid: {color: css("--line")}, ticks: {maxRotation: 0, autoSkipPadding: 18}},
+      y: {grid: {color: css("--line")}, title: {display: !!yTitle, text: yTitle}}
+    }
+  };
+}
+function mk(id, cfg) { if (charts[id]) charts[id].destroy(); charts[id] = new Chart($(id), cfg); }
+
+const WMO = {0:"Clear",1:"Mainly clear",2:"Partly cloudy",3:"Overcast",45:"Fog",48:"Fog",51:"Light drizzle",53:"Drizzle",55:"Heavy drizzle",61:"Light rain",63:"Rain",65:"Heavy rain",80:"Rain showers",81:"Rain showers",82:"Violent showers",95:"Thunderstorm",96:"Thunderstorm, hail",99:"Thunderstorm, hail"};
+
+function drawNow() {
+  const c = D.current;
+  if (!c) { $("#now").innerHTML = '<div class="empty">No data yet. The first run will appear within 30 minutes.</div>'; return; }
+  const cards = [
+    ["Temperature", f1(c.temperature), "°C", WMO[c.weather_code] || ""],
+    ["Humidity", f1(c.humidity, 0), "%", "Relative humidity"],
+    ["Rainfall", f1(c.rain), "mm", "Last 15 minutes"],
+    ["Wind speed", f1(c.wind), "km/h", "At 10 m"],
+  ];
+  $("#now").innerHTML = cards.map(([l, v, u, s]) =>
+    `<div class="card stat"><div class="label">${l}</div><div class="value">${v}<span class="unit">${u}</span></div><div class="label">${s}</div></div>`).join("");
+  const a = D.alert;
+  if (a) $("#alert").innerHTML = `<div class="alert ${a.level}"><div class="lamp"><i></i></div><div><b>${a.text}</b>
+    <span>Highest chance of rain ${f1(a.max_prob_pct, 0)}% &middot; ${f1(a.total_mm)} mm expected &middot; same rule as the ESP32 rain-alert device</span></div></div>`;
+}
+
+function draw24() {
+  const n = D.next24;
+  if (!n.length) return;
+  const o = baseOpts();
+  o.scales.y = {position: "left", grid: {color: css("--line")}, title: {display: true, text: "°C"}};
+  o.scales.y1 = {position: "right", grid: {display: false}, title: {display: true, text: "mm / %"}, min: 0, suggestedMax: 100};
+  mk("#c24", {type: "bar", options: o, data: {
+    labels: n.map(r => hhmm(r.t)),
+    datasets: [
+      {type: "line", label: "Temperature (°C)", data: n.map(r => r.temperature), borderColor: css("--fc"), backgroundColor: css("--fc"), tension: .35, pointRadius: 0, borderWidth: 2.5, yAxisID: "y"},
+      {type: "line", label: "Chance of rain (%)", data: n.map(r => r.rain_prob), borderColor: css("--rain"), borderDash: [5, 4], pointRadius: 0, borderWidth: 1.8, yAxisID: "y1"},
+      {type: "bar", label: "Rainfall (mm)", data: n.map(r => r.rain), backgroundColor: css("--rain") + "99", borderRadius: 4, yAxisID: "y1"},
+    ]}});
+}
+
+function bucketFor(h) { return h <= 6 ? "1-6 h" : h <= 12 ? "7-12 h" : h <= 24 ? "13-24 h" : h <= 48 ? "25-48 h" : "49-72 h"; }
+
+function drawFA() {
+  const {v, h} = sel, [name, unit] = VARS[v], s = D.series;
+  $("#varTabs").innerHTML = Object.entries(VARS).map(([k, [n]]) => `<button class="${k === v ? "on" : ""}" data-v="${k}">${n}</button>`).join("");
+  $("#hzTabs").innerHTML = D.series_horizons.map(x => `<button class="${x === h ? "on" : ""}" data-h="${x}">${x} h</button>`).join("");
+  $("#hzTxt").textContent = h === 1 ? "1 hour" : h + " hours";
+  document.querySelectorAll("#varTabs button").forEach(b => b.onclick = () => { sel.v = b.dataset.v; drawFA(); drawHZ(); });
+  document.querySelectorAll("#hzTabs button").forEach(b => b.onclick = () => { sel.h = +b.dataset.h; drawFA(); });
+  if (!s.length) return;
+  const o = baseOpts(unit);
+  if (v === "rain") o.scales.y.min = 0;
+  o.scales.x.ticks.callback = val => { const t = s[val].t; return hhmm(t) === "00:00" ? dayLbl(t) : hhmm(t); };
+  mk("#cfa", {type: v === "rain" ? "bar" : "line", options: o, data: {
+    labels: s.map(r => r.t.replace("T", " ")),
+    datasets: [
+      {type: "line", label: "Actual", data: s.map(r => r[v]), borderColor: css("--actual"), backgroundColor: css("--actual"), pointRadius: 0, borderWidth: 2, tension: .3},
+      {type: v === "rain" ? "bar" : "line", label: `Forecast (${h} h ahead)`, data: s.map(r => r[`${v}_f${h}`]), borderColor: css(COLORS[v]), backgroundColor: css(COLORS[v]) + (v === "rain" ? "aa" : ""), pointRadius: 0, borderWidth: 2, borderDash: v === "rain" ? [] : [6, 4], tension: .3},
+    ]}});
+  const b = D.accuracy[v].by_horizon.find(x => x.h === h);
+  $("#faKpis").innerHTML = b ? `<span>Pairs <b>${b.n}</b></span><span>MAE <b>${f1(b.mae, 2)} ${unit}</b></span><span>RMSE <b>${f1(b.rmse, 2)} ${unit}</b></span><span>Bias <b>${b.bias > 0 ? "+" : ""}${f1(b.bias, 2)} ${unit}</b></span>`
+    : `<span>Not enough data yet for ${h} h ahead. Check back after ${h} hours of collection.</span>`;
+}
+
+function drawHZ() {
+  const v = sel.v, a = D.accuracy[v], unit = a.unit;
+  const o = baseOpts(unit);
+  o.scales.x.title = {display: true, text: "Hours ahead"};
+  mk("#chz", {type: "line", options: o, data: {
+    labels: a.by_horizon.map(r => r.h),
+    datasets: [
+      {label: `MAE (${unit})`, data: a.by_horizon.map(r => r.mae), borderColor: css(COLORS[v]), backgroundColor: css(COLORS[v]) + "22", fill: true, pointRadius: 0, borderWidth: 2, tension: .3},
+      {label: `Bias (${unit})`, data: a.by_horizon.map(r => r.bias), borderColor: css("--muted"), pointRadius: 0, borderWidth: 1.5, borderDash: [4, 4], tension: .3},
+    ]}});
+}
+
+function drawTables() {
+  const buckets = D.accuracy.temperature.buckets.map(b => b.bucket);
+  let h = `<tr><th>Variable</th><th>Metric</th>${buckets.map(b => `<th>${b}</th>`).join("")}<th>All</th></tr>`;
+  for (const [k, a] of Object.entries(D.accuracy)) {
+    for (const m of ["mae", "rmse", "bias"]) {
+      h += `<tr><td>${m === "mae" ? `<b>${a.label}</b> (${a.unit})` : ""}</td><td style="text-align:right">${m.toUpperCase()}</td>${a.buckets.map(b => `<td>${f1(b[m], 2)}</td>`).join("")}<td>${f1(a.overall[m], 2)}</td></tr>`;
+    }
+  }
+  $("#accTable").innerHTML = h;
+
+  const r = D.rain_skill; $("#thr").textContent = r.threshold_mm;
+  $("#rainTable").innerHTML = `<tr><th>Horizon</th><th>POD</th><th>FAR</th><th>CSI</th><th>Accuracy</th><th>Brier</th></tr>` +
+    [...r.buckets, {bucket: "All", ...r.overall}].map(b => `<tr><td>${b.bucket}</td><td>${f1(b.pod, 2)}</td><td>${f1(b.far, 2)}</td><td>${f1(b.csi, 2)}</td><td>${b.accuracy == null ? "–" : f1(b.accuracy * 100, 0) + "%"}</td><td>${f1(b.brier, 3)}</td></tr>`).join("");
+  const o = r.overall;
+  $("#matrix").innerHTML = `<div class="h"></div><div class="h">Actual: rain</div><div class="h">Actual: no rain</div>
+    <div class="h">Forecast: rain</div><div><div class="n good">${o.hits}</div>Hits</div><div><div class="n bad">${o.false_alarms}</div>False alarms</div>
+    <div class="h">Forecast: no rain</div><div><div class="n bad">${o.misses}</div>Misses</div><div><div class="n good">${o.correct_negatives}</div>Correct no-rain</div>`;
+
+  const nd = D.next_day;
+  $("#ndTable").innerHTML = nd.length ? `<tr><th>Date</th><th>Max °C (F / A)</th><th>Min °C (F / A)</th><th>Rain mm (F / A)</th></tr>` +
+    nd.map(d => `<tr><td>${dayLbl(d.date + "T00:00")}</td><td>${f1(d.tmax_f)} / ${f1(d.tmax_a)}</td><td>${f1(d.tmin_f)} / ${f1(d.tmin_a)}</td><td>${f1(d.rain_f)} / ${f1(d.rain_a)}</td></tr>`).join("")
+    : `<tr><td class="empty">Needs one full day of data first.</td></tr>`;
+  const da = D.daily_actual;
+  $("#dayTable").innerHTML = da.length ? `<tr><th>Date</th><th>Max °C</th><th>Min °C</th><th>Rain mm</th><th>Hum %</th><th>Wind max</th></tr>` +
+    da.map(d => `<tr><td>${dayLbl(d.date + "T00:00")}</td><td>${f1(d.tmax)}</td><td>${f1(d.tmin)}</td><td>${f1(d.rain)}</td><td>${f1(d.hum_mean, 0)}</td><td>${f1(d.wind_max)}</td></tr>`).join("")
+    : `<tr><td class="empty">Needs one full day of data first.</td></tr>`;
+
+  const st = D.status || {};
+  $("#logStats").innerHTML = [
+    ["Collecting since", st.first_issue ? dayLbl(st.first_issue) + " " + hhmm(st.first_issue) : "–"],
+    ["Continuous run", st.longest_continuous_h != null ? f1(st.longest_continuous_h, 0) + " h" : "–"],
+    ["Hourly coverage", st.coverage_pct != null ? st.coverage_pct + "%" : "–"],
+    ["Runs (ok / failed)", st.runs_ok != null ? `${st.runs_ok} / ${st.runs_failed}` : "–"],
+  ].map(([l, v]) => `<div class="stat"><div class="label">${l}</div><div class="value" style="font-size:22px">${v}</div></div>`).join("");
+  $("#runTable").innerHTML = `<tr><th>Run (UTC)</th><th>Forecast hour</th><th>Status</th><th>Rows</th><th>Note</th></tr>` +
+    D.recent_runs.map(r => `<tr><td>${r.run_at_utc.replace("T", " ").replace("Z", "")}</td><td>${r.issued_at.replace("T", " ")}</td><td class="${r.status === "ok" ? "good" : "bad"}">${r.status}</td><td>${r.forecast_rows}</td><td style="text-align:left;font-family:Inter">${r.note || ""}</td></tr>`).join("");
+  const days = st.longest_continuous_h != null ? (st.longest_continuous_h / 24).toFixed(1) : 0;
+  $("#status").textContent = st.last_issue ? `Live · ${days} days continuous · last update ${hhmm(D.current.time)}` : "Waiting for first run";
+  $("#gen").textContent = "Generated " + D.generated_at_utc.replace("T", " ").replace("Z", " UTC");
+}
+
+function drawAll() { drawNow(); draw24(); drawFA(); drawHZ(); drawTables(); }
+
+fetch("data.json", {cache: "no-store"}).then(r => r.json()).then(d => { D = d; drawAll(); })
+  .catch(() => { $("#status").textContent = "No data yet"; });
+setInterval(() => fetch("data.json", {cache: "no-store"}).then(r => r.json()).then(d => { D = d; drawAll(); }).catch(() => {}), 10 * 60 * 1000);
+</script>
+</body>
+</html>
