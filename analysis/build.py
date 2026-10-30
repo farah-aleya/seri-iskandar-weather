@@ -243,6 +243,41 @@ def main():
     rain_overall = rain_scores([(num(f["precipitation_mm"]), num(f["precip_prob_pct"]),
                                  num(o["precipitation_mm"])) for f, o in matched])
 
+    # ---- rain skill with +/-1 hour timing tolerance ----
+    fc_rain = {(f["issued_at"], f["target_time"]): num(f["precipitation_mm"]) for f in fc}
+
+    def shift(t, h):
+        return (dt.datetime.fromisoformat(t) + dt.timedelta(hours=h)).strftime("%Y-%m-%dT%H:%M")
+
+    def wet(v):
+        return v is not None and v >= RAIN_EVENT_MM
+
+    def tolerant_scores(pairs):
+        hit = miss = fa = cn = 0
+        for f, o in pairs:
+            t = f["target_time"]
+            pred = wet(num(f["precipitation_mm"]))
+            obs = wet(num(o["precipitation_mm"]))
+            obs_near = any(wet(num(obs_by_time.get(shift(t, d), {}).get("precipitation_mm"))) for d in (-1, 0, 1))
+            pred_near = any(wet(fc_rain.get((f["issued_at"], shift(t, d)))) for d in (-1, 0, 1))
+            if pred and obs_near:
+                hit += 1          # forecast rain, and it rained within 1 hour
+            elif pred:
+                fa += 1           # forecast rain, no rain within 1 hour
+            elif obs and pred_near:
+                hit += 1          # it rained, and rain was forecast within 1 hour
+            elif obs:
+                miss += 1         # it rained, no rain forecast within 1 hour
+            else:
+                cn += 1
+        total = hit + miss + fa + cn
+        r = lambda a, b: round(a / b, 3) if b else None
+        return {"hits": hit, "misses": miss, "false_alarms": fa, "correct_negatives": cn,
+                "pod": r(hit, hit + miss), "far": r(fa, hit + fa), "csi": r(hit, hit + miss + fa),
+                "accuracy": r(hit + cn, total), "n": total}
+
+    rain_tol_overall = tolerant_scores(matched)
+
     # ---- forecast vs actual series for charts ----
     fc_index = defaultdict(dict)  # target_time -> horizon -> row
     for f in fc:
@@ -330,7 +365,8 @@ def main():
         "series": series,
         "series_horizons": SERIES_HORIZONS,
         "accuracy": accuracy,
-        "rain_skill": {"threshold_mm": RAIN_EVENT_MM, "overall": rain_overall, "buckets": rain},
+        "rain_skill": {"threshold_mm": RAIN_EVENT_MM, "overall": rain_overall, "buckets": rain,
+                       "tolerant_overall": rain_tol_overall},
         "daily_actual": [{"date": d, **v} for d, v in daily_actual.items()],
         "next_day": next_day,
         "outlook": outlook,
