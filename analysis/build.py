@@ -304,6 +304,13 @@ def main():
             "rain_prob_f": num(pick["precip_prob_max_pct"]),
         })
 
+    # ---- daily outlook (today + next 3 days) from the latest daily forecast ----
+    latest_daily = max((d["issued_at"] for d in daily), default=None)
+    outlook = [{"date": d["target_date"], "lead": int(d["lead_days"]),
+                "tmax": num(d["tmax_c"]), "tmin": num(d["tmin_c"]),
+                "rain": num(d["precip_sum_mm"]), "rain_prob": num(d["precip_prob_max_pct"])}
+               for d in sorted(daily, key=lambda r: r["target_date"]) if d["issued_at"] == latest_daily]
+
     status = collection_status(runs, obs_by_time)
     latest_cur = cur[-1] if cur else None
 
@@ -326,6 +333,7 @@ def main():
         "rain_skill": {"threshold_mm": RAIN_EVENT_MM, "overall": rain_overall, "buckets": rain},
         "daily_actual": [{"date": d, **v} for d, v in daily_actual.items()],
         "next_day": next_day,
+        "outlook": outlook,
         "status": status,
         "recent_runs": runs[-12:][::-1],
     }
