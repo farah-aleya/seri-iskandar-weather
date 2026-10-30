@@ -119,30 +119,43 @@ def rain_alert(next_hours):
 
 
 def collection_status(runs, obs_times):
+    """Continuity is measured on the hourly ACTUAL record.
+
+    Each run re-downloads the past 24-48 hours of actual values (past_days=1),
+    so a delayed or skipped GitHub Actions run does not leave a hole in the
+    hourly record as long as the next run arrives within about 24 hours.
+    Forecast snapshots are stored once per run, so their spacing is reported separately.
+    """
     ok = [r for r in runs if r["status"] == "ok"]
     err = [r for r in runs if r["status"] != "ok"]
     issues = sorted({r["issued_at"] for r in ok if r["issued_at"]})
     if not issues:
         return {}
-    hours = [dt.datetime.fromisoformat(t) for t in issues]
-    first, last = hours[0], hours[-1]
-    expected = int((last - first).total_seconds() // 3600) + 1
-    # longest continuous stretch (no gap of more than 2 hours between stored forecasts)
-    best = cur = 0.0
+    first_issue = dt.datetime.fromisoformat(issues[0])
+    hours = sorted(dt.datetime.fromisoformat(t) for t in obs_times
+                   if dt.datetime.fromisoformat(t) >= first_issue)
+    if not hours:
+        return {}
+    expected = int((hours[-1] - hours[0]).total_seconds() // 3600) + 1
+    # longest stretch of consecutive hourly actual values
+    best = cur = 1
     for a, b in zip(hours, hours[1:]):
-        gap = (b - a).total_seconds() / 3600
-        cur = cur + gap if gap <= 2 else 0
+        cur = cur + 1 if (b - a).total_seconds() == 3600 else 1
         best = max(best, cur)
+    snaps = [dt.datetime.fromisoformat(t) for t in issues]
+    gaps = [(b - a).total_seconds() / 3600 for a, b in zip(snaps, snaps[1:])]
     return {
         "first_issue": issues[0],
         "last_issue": issues[-1],
-        "hours_with_forecast": len(issues),
+        "observation_hours": len(hours),
         "hours_expected": expected,
-        "coverage_pct": round(100 * len(issues) / expected, 1),
-        "longest_continuous_h": round(best, 1),
+        "coverage_pct": round(100 * len(hours) / expected, 1),
+        "longest_continuous_h": best,
+        "forecast_snapshots": len(issues),
+        "avg_snapshot_gap_h": round(sum(gaps) / len(gaps), 1) if gaps else None,
+        "max_snapshot_gap_h": round(max(gaps), 1) if gaps else None,
         "runs_ok": len(ok),
         "runs_failed": len(err),
-        "observation_hours": len(obs_times),
     }
 
 
