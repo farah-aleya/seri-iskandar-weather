@@ -39,8 +39,8 @@
 #include <Adafruit_BME280.h>
 
 // ---------- change these ----------
-const char* WIFI_SSID = "YOUR_WIFI_NAME";
-const char* WIFI_PASS = "YOUR_WIFI_PASSWORD";
+const char* WIFI_SSID = "YOUR WIFI";
+const char* WIFI_PASS = "YOUR WIFI PASSWORD";
 const int   RAIN_WET_PERCENT = 30;   // calibrate: see README, section 6
 // ----------------------------------
 
@@ -269,6 +269,8 @@ void setup() {
   analogReadResolution(12);
 
   Wire.begin(PIN_SDA, PIN_SCL);     // one I2C bus shared by the OLED and the BME280
+  Wire.setClock(100000);            // 100 kHz: more reliable with long jumper wires
+  u8g2.setBusClock(100000);
   u8g2.begin();
   u8g2.clearBuffer();
   u8g2.setFont(u8g2_font_6x10_tf);
