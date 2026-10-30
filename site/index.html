@@ -243,6 +243,11 @@ td:first-child{font-family:Inter,sans-serif}
           </div>
         </div>
         <div class="card">
+          <h3>Timing tolerance: exact hour vs ±1 hour</h3>
+          <p class="hint">Counts a rain forecast as correct if rain fell within 1 hour of the forecast time. The difference between the two rows shows how much of the error is only timing.</p>
+          <div class="scroll"><table id="tolTable"></table></div>
+        </div>
+        <div class="card">
           <h3>Next-day forecast check</h3>
           <p class="hint">Forecast issued around 08:00 the day before vs the actual daily values</p>
           <div class="chartbox sm"><canvas id="cnd"></canvas></div>
@@ -513,6 +518,11 @@ function drawRain() {
       {label: "Forecast rain (mm)", data: nd.map(d => d.rain_f), backgroundColor: css("--rain") + "88", borderRadius: 6},
       {label: "Actual rain (mm)", data: nd.map(d => d.rain_a), backgroundColor: css("--actual") + "cc", borderRadius: 6},
     ]}});
+  }
+  if (r.tolerant_overall) {
+    const row = (name, x) => `<tr><td>${name}</td><td>${f1(x.pod, 2)}</td><td>${f1(x.far, 2)}</td><td>${f1(x.csi, 2)}</td><td>${f1(x.accuracy * 100, 0)}%</td><td>${x.hits}</td><td>${x.false_alarms}</td><td>${x.misses}</td></tr>`;
+    $("#tolTable").innerHTML = `<tr><th>Matching</th><th>POD</th><th>FAR</th><th>CSI</th><th>Accuracy</th><th>Hits</th><th>False alarms</th><th>Misses</th></tr>` +
+      row("Exact hour", r.overall) + row("Within ±1 hour", r.tolerant_overall);
   }
 }
 
