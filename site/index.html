@@ -145,7 +145,7 @@ td:first-child{font-family:Inter,sans-serif}
 
   <div class="card section">
     <h2>Data collection log</h2>
-    <p class="hint">The collector runs on GitHub Actions every 30 minutes and stores one forecast per hour.</p>
+    <p class="hint">The collector is scheduled every 30 minutes on GitHub Actions (GitHub may delay runs). Each run re-downloads the past day of actual values, so the hourly record stays complete even when a run is late.</p>
     <div class="grid g4" id="logStats"></div>
     <div class="scroll" style="margin-top:14px"><table id="runTable"></table></div>
   </div>
@@ -291,9 +291,9 @@ function drawTables() {
   const st = D.status || {};
   $("#logStats").innerHTML = [
     ["Collecting since", st.first_issue ? dayLbl(st.first_issue) + " " + hhmm(st.first_issue) : "–"],
-    ["Continuous run", st.longest_continuous_h != null ? f1(st.longest_continuous_h, 0) + " h" : "–"],
-    ["Hourly coverage", st.coverage_pct != null ? st.coverage_pct + "%" : "–"],
-    ["Runs (ok / failed)", st.runs_ok != null ? `${st.runs_ok} / ${st.runs_failed}` : "–"],
+    ["Continuous hourly record", st.longest_continuous_h != null ? (st.longest_continuous_h / 24).toFixed(1) + " days" : "–"],
+    ["Hourly coverage (actual)", st.coverage_pct != null ? st.coverage_pct + "%" : "–"],
+    ["Forecast snapshots", st.forecast_snapshots != null ? `${st.forecast_snapshots} (every ~${f1(st.avg_snapshot_gap_h)} h)` : "–"],
   ].map(([l, v]) => `<div class="stat"><div class="label">${l}</div><div class="value" style="font-size:22px">${v}</div></div>`).join("");
   $("#runTable").innerHTML = `<tr><th>Run (UTC)</th><th>Forecast hour</th><th>Status</th><th>Rows</th><th>Note</th></tr>` +
     D.recent_runs.map(r => `<tr><td>${r.run_at_utc.replace("T", " ").replace("Z", "")}</td><td>${r.issued_at.replace("T", " ")}</td><td class="${r.status === "ok" ? "good" : "bad"}">${r.status}</td><td>${r.forecast_rows}</td><td style="text-align:left;font-family:Inter">${r.note || ""}</td></tr>`).join("");
