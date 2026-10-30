@@ -3,158 +3,293 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Seri Iskandar Weather Monitor</title>
+<title>Seri Iskandar Weather</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
 :root{
-  --bg:#f3f6f9; --panel:#ffffff; --ink:#0f1c2b; --muted:#5b6b7c; --line:#e1e8ef;
-  --accent:#0b72b9; --actual:#0f1c2b; --fc:#e8833a; --rain:#2d9cdb; --hum:#14a38b; --wind:#7b61ff;
-  --green:#1f9d55; --amber:#d99100; --red:#d64545; --chip:#eef3f8;
-  --shadow:0 1px 2px rgba(15,28,43,.06),0 4px 16px rgba(15,28,43,.05);
+  --bg:#0b1016; --panel:#1b2430; --panel2:#222d3b; --ink:#eef3f8; --muted:#8d9bab; --line:#2c3846;
+  --accent:#3fa2ff; --fc:#f5a25d; --actual:#eef3f8; --rain:#4fb3ff; --hum:#2ec4a6; --wind:#9a85ff;
+  --green:#22b26b; --amber:#e6a019; --red:#e5484d;
 }
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --bg:#0c141d; --panel:#131e2a; --ink:#e7eef5; --muted:#93a4b5; --line:#22313f;
-  --accent:#4fb0f0; --actual:#e7eef5; --fc:#f5a25d; --chip:#1b2836; --shadow:none;}}
-:root[data-theme="dark"]{--bg:#0c141d; --panel:#131e2a; --ink:#e7eef5; --muted:#93a4b5; --line:#22313f;
-  --accent:#4fb0f0; --actual:#e7eef5; --fc:#f5a25d; --chip:#1b2836; --shadow:none;}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 Inter,system-ui,sans-serif}
-.wrap{max-width:1180px;margin:0 auto;padding:24px 16px 48px}
-header{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;justify-content:space-between;margin-bottom:18px}
-h1{font-size:26px;margin:0;letter-spacing:-.02em}
-.sub{color:var(--muted);font-size:14px}
-.pill{display:inline-flex;align-items:center;gap:8px;background:var(--chip);border-radius:999px;padding:6px 12px;font-size:13px;color:var(--muted)}
-.dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 0 4px rgba(31,157,85,.15)}
-button.theme{border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:8px;padding:6px 10px;cursor:pointer}
+html,body{margin:0}
+body{background:radial-gradient(1200px 600px at 70% -10%,#1d2a3a 0%,var(--bg) 60%);background-color:var(--bg);color:var(--ink);
+  font:15px/1.5 Inter,system-ui,sans-serif;min-height:100vh}
+h1,h2,h3,.disp{font-family:Outfit,Inter,sans-serif}
+.app{max-width:1360px;margin:0 auto;padding:20px 16px 40px;display:grid;grid-template-columns:96px 1fr;gap:18px}
+/* sidebar */
+.side{background:var(--panel);border-radius:22px;padding:18px 8px;display:flex;flex-direction:column;align-items:center;gap:6px;
+  position:sticky;top:20px;height:calc(100vh - 40px);min-height:520px}
+.logo{width:48px;height:48px;border-radius:14px;background:var(--panel2);display:grid;place-items:center;margin-bottom:18px}
+.nav{width:100%;border:0;background:none;color:var(--muted);font:500 13px Inter,sans-serif;padding:12px 4px;border-radius:14px;cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;gap:6px}
+.nav svg{width:22px;height:22px}
+.nav:hover{color:var(--ink)}
+.nav.on{color:var(--ink);background:var(--panel2)}
+.nav.on svg{color:var(--accent)}
+.side .spacer{flex:1}
+.side .src{font-size:10.5px;color:var(--muted);text-align:center;line-height:1.3}
+.side .src a{color:var(--muted)}
+/* main */
+.top{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin-bottom:16px}
+.loc{display:flex;align-items:center;gap:10px;background:var(--panel);border-radius:14px;padding:10px 16px;color:var(--muted);font-size:14px}
+.pill{display:inline-flex;align-items:center;gap:8px;background:var(--panel);border-radius:999px;padding:8px 14px;font-size:13px;color:var(--muted)}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 0 4px rgba(34,178,107,.18)}
+.view{display:none}.view.on{display:block}
 .grid{display:grid;gap:16px}
-.g4{grid-template-columns:repeat(4,1fr)}
-.g2{grid-template-columns:1.4fr 1fr}
-@media(max-width:900px){.g4{grid-template-columns:repeat(2,1fr)}.g2{grid-template-columns:1fr}}
-.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;box-shadow:var(--shadow);min-width:0}
-.card h2{font-size:16px;margin:0 0 4px}
+.cols{grid-template-columns:minmax(0,1.75fr) minmax(0,1fr)}
+.card{background:var(--panel);border-radius:22px;padding:20px 22px;min-width:0}
+.card h3{margin:0 0 4px;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
 .card .hint{color:var(--muted);font-size:13px;margin:0 0 14px}
-.stat .label{color:var(--muted);font-size:13px}
-.stat .value{font-size:30px;font-weight:700;letter-spacing:-.02em}
-.stat .unit{font-size:15px;color:var(--muted);font-weight:500;margin-left:2px}
-.alert{display:flex;gap:16px;align-items:center;border-radius:14px;padding:16px 18px;margin:16px 0;color:#fff}
-.alert.green{background:var(--green)}.alert.amber{background:var(--amber)}.alert.red{background:var(--red)}
-.lamp{width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.25);display:grid;place-items:center;flex:none}
-.lamp i{width:20px;height:20px;border-radius:50%;background:#fff;display:block}
-.alert.red .lamp i{animation:pulse 1.2s infinite}
-@keyframes pulse{50%{opacity:.35}}
-.alert b{font-size:17px;display:block}
-.alert span{opacity:.9;font-size:14px}
-.chartbox{position:relative;height:300px}
+/* hero */
+.hero{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:26px 30px;background:linear-gradient(135deg,#1f2c3c,#16202b)}
+.hero .city{font-size:34px;font-weight:600;margin:0}
+.hero .sub{color:var(--muted);font-size:14px;margin-top:2px}
+.hero .temp{font-family:Outfit,sans-serif;font-size:92px;font-weight:600;line-height:1;margin-top:22px;letter-spacing:-.02em}
+.hero .temp sup{font-size:40px;vertical-align:top;position:relative;top:10px}
+.hero .cond{font-size:16px;margin-top:8px}
+.hero .bigicon{width:210px;height:210px;flex:none;filter:drop-shadow(0 18px 30px rgba(0,0,0,.35))}
+/* alert */
+.alert{display:flex;gap:14px;align-items:center;border-radius:18px;padding:14px 18px;color:#fff}
+.alert.green{background:linear-gradient(90deg,#1f9d5e,#22b26b)}.alert.amber{background:linear-gradient(90deg,#c98510,#e6a019)}.alert.red{background:linear-gradient(90deg,#c9363b,#e5484d)}
+.alert .lamp{width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.25);display:grid;place-items:center;flex:none}
+.alert .lamp i{width:18px;height:18px;border-radius:50%;background:#fff;display:block}
+.alert.red .lamp i{animation:pulse 1.2s infinite}@keyframes pulse{50%{opacity:.3}}
+.alert b{font-family:Outfit,sans-serif;font-size:17px;display:block}.alert span{opacity:.92;font-size:13.5px}
+/* hourly */
+.hours{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:0}
+.hr{text-align:center;padding:4px 2px;border-right:1px solid var(--line)}
+.hr:last-child{border-right:0}
+.hr .t{color:var(--muted);font-size:13px;font-weight:600}
+.hr svg{width:52px;height:52px;margin:6px auto 2px;display:block}
+.hr .v{font-family:Outfit,sans-serif;font-size:21px;font-weight:600}
+.hr .p{font-size:12px;color:var(--rain)}
+/* conditions */
+.conds{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 24px}
+.cond{display:flex;gap:12px;align-items:flex-start}
+.cond svg{width:22px;height:22px;color:var(--muted);flex:none;margin-top:3px}
+.cond .l{color:var(--muted);font-size:14px}
+.cond .n{font-family:Outfit,sans-serif;font-size:26px;font-weight:600;line-height:1.2}
+/* outlook */
+.days .day{display:grid;grid-template-columns:76px 44px 1fr auto;align-items:center;gap:10px;padding:13px 0;border-bottom:1px solid var(--line)}
+.days .day:last-child{border-bottom:0}
+.days .dn{color:var(--muted);font-size:14px}
+.days svg{width:40px;height:40px}
+.days .dl{font-weight:600;font-size:14px}.days .dl small{display:block;color:var(--rain);font-weight:500;font-size:12px}
+.days .dt{font-family:Outfit,sans-serif;font-size:17px;font-weight:600;white-space:nowrap}.days .dt span{color:var(--muted);font-weight:500}
+.chartbox{position:relative;height:280px}
 .chartbox.sm{height:240px}
+/* tabs */
 .tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
-.tabs button{border:1px solid var(--line);background:var(--chip);color:var(--ink);border-radius:8px;padding:6px 12px;font:inherit;font-size:13px;cursor:pointer}
-.tabs button.on{background:var(--accent);border-color:var(--accent);color:#fff}
-.row{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;align-items:center}
-.kpis{display:flex;gap:18px;flex-wrap:wrap;font-size:13px;color:var(--muted);margin-top:10px}
-.kpis b{color:var(--ink);font-family:"JetBrains Mono",monospace;font-size:14px}
+.tabs button{border:0;background:var(--panel2);color:var(--muted);border-radius:10px;padding:7px 13px;font:500 13px Inter,sans-serif;cursor:pointer}
+.tabs button.on{background:var(--accent);color:#fff}
+.row{display:flex;flex-wrap:wrap;gap:8px 16px;justify-content:space-between;align-items:center}
+.kpis{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+.kpi{background:var(--panel2);border-radius:14px;padding:10px 14px;min-width:110px}
+.kpi .l{color:var(--muted);font-size:12px}.kpi .n{font-family:Outfit,sans-serif;font-size:22px;font-weight:600}
+/* tables */
+.scroll{overflow-x:auto}
 table{width:100%;border-collapse:collapse;font-size:13.5px}
-th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
 th:first-child,td:first-child{text-align:left}
-th{color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.04em}
+th{color:var(--muted);font-weight:600;font-size:11.5px;text-transform:uppercase;letter-spacing:.05em}
 td{font-family:"JetBrains Mono",monospace;font-size:13px}
 td:first-child{font-family:Inter,sans-serif}
-.scroll{overflow-x:auto}
-.good{color:var(--green)}.bad{color:var(--red)}
-.section{margin-top:16px}
-.foot{margin-top:28px;color:var(--muted);font-size:13px;display:flex;flex-wrap:wrap;gap:6px 18px}
-.foot a{color:var(--accent)}
-.empty{color:var(--muted);font-size:14px;padding:20px 0}
-.matrix{display:grid;grid-template-columns:auto 1fr 1fr;gap:6px;font-size:13px;margin-top:6px}
-.matrix div{background:var(--chip);border-radius:8px;padding:10px;text-align:center}
+.good{color:#4ade80}.bad{color:#ff7a7f}
+.matrix{display:grid;grid-template-columns:auto 1fr 1fr;gap:8px;font-size:13px}
+.matrix div{background:var(--panel2);border-radius:14px;padding:12px;text-align:center}
 .matrix .h{background:none;color:var(--muted);font-weight:600;padding:6px}
-.matrix .n{font-family:"JetBrains Mono",monospace;font-size:18px;font-weight:600}
+.matrix .n{font-family:Outfit,sans-serif;font-size:26px;font-weight:600}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.stat{background:var(--panel2);border-radius:16px;padding:14px 16px}
+.stat .l{color:var(--muted);font-size:12.5px}.stat .n{font-family:Outfit,sans-serif;font-size:22px;font-weight:600}
+.insight{background:var(--panel2);border-radius:16px;padding:14px 16px;font-size:14px}
+.insight b{color:var(--accent)}
+.foot{color:var(--muted);font-size:12.5px;margin-top:18px;display:flex;flex-wrap:wrap;gap:6px 18px}
+.foot a{color:var(--accent)}
+.empty{color:var(--muted);padding:16px 0}
+/* responsive */
+@media(max-width:1060px){.cols{grid-template-columns:1fr}}
+@media(max-width:760px){
+  .app{grid-template-columns:1fr;padding-top:12px}
+  .side{position:sticky;top:0;z-index:5;height:auto;min-height:0;flex-direction:row;justify-content:space-around;padding:6px;border-radius:16px}
+  .logo,.side .spacer,.side .src{display:none}
+  .nav{padding:8px 2px;font-size:11.5px}
+  .hero{padding:20px}.hero .temp{font-size:68px}.hero .bigicon{width:120px;height:120px}.hero .city{font-size:26px}
+  .hours{grid-template-columns:repeat(4,minmax(0,1fr));row-gap:12px}
+  .hr:nth-child(4){border-right:0}
+  .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .conds{gap:14px}
+}
 </style>
 </head>
 <body>
-<div class="wrap">
-  <header>
-    <div>
-      <h1>Seri Iskandar Weather Monitor</h1>
-      <div class="sub">Seri Iskandar, Perak, Malaysia &middot; 4.36°N, 100.97°E &middot; updated every 30 minutes</div>
-    </div>
-    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+<!-- shared gradients for the weather icons -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <radialGradient id="gSun" cx="38%" cy="35%" r="70%"><stop offset="0" stop-color="#fff3b0"/><stop offset=".45" stop-color="#ffd23f"/><stop offset="1" stop-color="#f29a1f"/></radialGradient>
+    <linearGradient id="gCloud" gradientUnits="userSpaceOnUse" x1="0" y1="18" x2="0" y2="52"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#b9c8dc"/></linearGradient>
+    <linearGradient id="gCloudDark" gradientUnits="userSpaceOnUse" x1="0" y1="14" x2="0" y2="48"><stop offset="0" stop-color="#9fb0c8"/><stop offset="1" stop-color="#5e6f8a"/></linearGradient>
+    <linearGradient id="gMoon" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffe08a"/><stop offset="1" stop-color="#f0a52c"/></linearGradient>
+    <linearGradient id="gDrop" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9fd6ff"/><stop offset="1" stop-color="#3b9cf5"/></linearGradient>
+  </defs>
+</svg>
+
+<div class="app">
+  <aside class="side">
+    <div class="logo"><svg id="logoSvg" width="34" height="34" viewBox="0 0 64 64"></svg></div>
+    <button class="nav on" data-view="weather"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M7 18h10a4 4 0 0 0 .5-7.97A6 6 0 0 0 6.1 11.2 3.5 3.5 0 0 0 7 18z"/></svg>Weather</button>
+    <button class="nav" data-view="accuracy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 19V5M4 19h16M8 15l3-4 3 2 5-6"/></svg>Accuracy</button>
+    <button class="nav" data-view="rain"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/></svg>Rain check</button>
+    <button class="nav" data-view="data"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v12c0 1.7 3.1 3 7 3s7-1.3 7-3V6M5 12c0 1.7 3.1 3 7 3s7-1.3 7-3"/></svg>Data</button>
+    <div class="spacer"></div>
+    <div class="src">Data:<br><a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a></div>
+  </aside>
+
+  <main>
+    <div class="top">
+      <div class="loc"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
+        Seri Iskandar, Perak, Malaysia &middot; 4.36°N, 100.97°E</div>
       <span class="pill"><span class="dot"></span><span id="status">Loading...</span></span>
-      <button class="theme" id="themeBtn" title="Toggle light/dark">◐</button>
     </div>
-  </header>
 
-  <div class="grid g4" id="now"></div>
-  <div id="alert"></div>
-
-  <div class="card">
-    <div class="row"><div><h2>Next 24 hours</h2><p class="hint">Latest Open-Meteo forecast: temperature (line), rainfall (bars) and chance of rain (dashed).</p></div></div>
-    <div class="chartbox"><canvas id="c24"></canvas></div>
-  </div>
-
-  <div class="grid g2 section">
-    <div class="card">
-      <h2>Forecast vs actual</h2>
-      <p class="hint">How the forecast made <b id="hzTxt">24 hours</b> earlier compares with what actually happened.</p>
-      <div class="row">
-        <div class="tabs" id="varTabs"></div>
-        <div class="tabs" id="hzTabs"></div>
+    <!-- ============ WEATHER ============ -->
+    <section class="view on" id="v-weather">
+      <div class="grid cols">
+        <div class="grid">
+          <div class="card hero">
+            <div>
+              <h1 class="city">Seri Iskandar</h1>
+              <div class="sub" id="heroSub">Chance of rain: –</div>
+              <div class="temp" id="heroTemp">–<sup>°C</sup></div>
+              <div class="cond" id="heroCond"></div>
+            </div>
+            <svg class="bigicon" id="heroIcon" viewBox="0 0 64 64"></svg>
+          </div>
+          <div id="alert"></div>
+          <div class="card">
+            <h3>Today's forecast</h3>
+            <p class="hint">Next 24 hours, every 3 hours</p>
+            <div class="hours" id="hours"></div>
+          </div>
+          <div class="card">
+            <h3>Air conditions</h3>
+            <p class="hint" id="condTime">Now</p>
+            <div class="conds" id="conds"></div>
+          </div>
+        </div>
+        <div class="grid" style="align-content:start">
+          <div class="card days">
+            <h3>4-day forecast</h3>
+            <p class="hint">Daily max / min and chance of rain</p>
+            <div id="outlook"></div>
+          </div>
+          <div class="card">
+            <h3>Next 24 hours</h3>
+            <p class="hint">Temperature (line), rainfall (bars), chance of rain (dashed)</p>
+            <div class="chartbox sm"><canvas id="c24"></canvas></div>
+          </div>
+        </div>
       </div>
-      <div class="chartbox"><canvas id="cfa"></canvas></div>
-      <div class="kpis" id="faKpis"></div>
-    </div>
-    <div class="card">
-      <h2>Error grows with lead time</h2>
-      <p class="hint">Mean absolute error (MAE) and bias for every forecast horizon, 1 to 72 hours ahead.</p>
-      <div class="chartbox"><canvas id="chz"></canvas></div>
-    </div>
-  </div>
+    </section>
 
-  <div class="card section">
-    <h2>Forecast accuracy by horizon</h2>
-    <p class="hint">Error = forecast minus actual. Bias above 0 means the forecast runs too high.</p>
-    <div class="scroll"><table id="accTable"></table></div>
-  </div>
+    <!-- ============ ACCURACY ============ -->
+    <section class="view" id="v-accuracy">
+      <div class="grid">
+        <div class="card">
+          <div class="row">
+            <div><h3>Forecast vs actual</h3><p class="hint" style="margin:0">Forecast made <b id="hzTxt">24 hours</b> earlier compared with what actually happened</p></div>
+          </div>
+          <div class="row" style="margin-top:12px"><div class="tabs" id="varTabs"></div><div class="tabs" id="hzTabs"></div></div>
+          <div class="tabs" id="rangeTabs"></div>
+          <div class="chartbox"><canvas id="cfa"></canvas></div>
+          <div class="kpis" id="faKpis"></div>
+        </div>
+        <div class="grid cols">
+          <div class="card">
+            <h3>Error grows with lead time</h3>
+            <p class="hint">Mean absolute error (MAE) and bias for every forecast horizon, 1 to 72 hours ahead</p>
+            <div class="chartbox"><canvas id="chz"></canvas></div>
+          </div>
+          <div class="card">
+            <h3>Key findings</h3>
+            <p class="hint">Calculated automatically from the collected data</p>
+            <div class="grid" id="insights" style="gap:10px"></div>
+          </div>
+        </div>
+        <div class="card">
+          <h3>Accuracy by horizon</h3>
+          <p class="hint">Error = forecast minus actual. Bias above 0 means the forecast runs too high.</p>
+          <div class="scroll"><table id="accTable"></table></div>
+        </div>
+      </div>
+    </section>
 
-  <div class="grid g2 section">
-    <div class="card">
-      <h2>Did it rain when the forecast said it would?</h2>
-      <p class="hint">An hour counts as rainy when it has at least <span id="thr"></span> mm. POD = rain events caught, FAR = false alarms, CSI = overall rain skill, Brier = error of the chance-of-rain value (0 is perfect).</p>
-      <div class="scroll"><table id="rainTable"></table></div>
-    </div>
-    <div class="card">
-      <h2>Rain event matrix (all horizons)</h2>
-      <p class="hint">Every forecast hour compared with the actual hour.</p>
-      <div class="matrix" id="matrix"></div>
-    </div>
-  </div>
+    <!-- ============ RAIN ============ -->
+    <section class="view" id="v-rain">
+      <div class="grid">
+        <div class="grid cols">
+          <div class="card">
+            <h3>Did it rain when the forecast said it would?</h3>
+            <p class="hint">An hour counts as rainy with at least <span id="thr"></span> mm. POD = rain caught, FAR = false alarms, CSI = overall rain skill, Brier = error of the chance-of-rain value (0 is perfect).</p>
+            <div class="scroll"><table id="rainTable"></table></div>
+          </div>
+          <div class="card">
+            <h3>Rain event matrix</h3>
+            <p class="hint">Every forecast hour vs the actual hour (all horizons)</p>
+            <div class="matrix" id="matrix"></div>
+          </div>
+        </div>
+        <div class="card">
+          <h3>Next-day forecast check</h3>
+          <p class="hint">Forecast issued around 08:00 the day before vs the actual daily values</p>
+          <div class="chartbox sm"><canvas id="cnd"></canvas></div>
+          <div class="scroll" style="margin-top:12px"><table id="ndTable"></table></div>
+        </div>
+      </div>
+    </section>
 
-  <div class="grid g2 section">
-    <div class="card">
-      <h2>Next-day forecast check</h2>
-      <p class="hint">Forecast issued around 08:00 the day before vs the actual daily values.</p>
-      <div class="scroll"><table id="ndTable"></table></div>
-    </div>
-    <div class="card">
-      <h2>Daily summary (actual)</h2>
-      <p class="hint">Complete days only.</p>
-      <div class="scroll"><table id="dayTable"></table></div>
-    </div>
-  </div>
+    <!-- ============ DATA ============ -->
+    <section class="view" id="v-data">
+      <div class="grid">
+        <div class="card">
+          <h3>Data collection</h3>
+          <p class="hint">Scheduled every 30 minutes on GitHub Actions (GitHub may delay runs). Each run re-downloads the past day of actual values, so the hourly record stays complete even when a run is late.</p>
+          <div class="stats" id="logStats"></div>
+        </div>
+        <div class="grid cols">
+          <div class="card">
+            <h3>Daily summary (actual)</h3>
+            <p class="hint">Complete days only</p>
+            <div class="scroll"><table id="dayTable"></table></div>
+          </div>
+          <div class="card">
+            <h3>Recent runs</h3>
+            <p class="hint">Latest collector runs</p>
+            <div class="scroll"><table id="runTable"></table></div>
+          </div>
+        </div>
+        <div class="card">
+          <h3>Downloads</h3>
+          <p class="hint">Database and raw data files, updated after every run</p>
+          <div class="tabs">
+            <a href="weather.db"><button>weather.db (SQLite)</button></a>
+            <a href="data/observations.csv"><button>observations.csv</button></a>
+            <a href="data/forecasts.csv"><button>forecasts.csv</button></a>
+            <a href="data/daily_forecasts.csv"><button>daily_forecasts.csv</button></a>
+          </div>
+        </div>
+      </div>
+    </section>
 
-  <div class="card section">
-    <h2>Data collection log</h2>
-    <p class="hint">The collector is scheduled every 30 minutes on GitHub Actions (GitHub may delay runs). Each run re-downloads the past day of actual values, so the hourly record stays complete even when a run is late.</p>
-    <div class="grid g4" id="logStats"></div>
-    <div class="scroll" style="margin-top:14px"><table id="runTable"></table></div>
-  </div>
-
-  <div class="foot">
-    <span>Weather data by <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo.com</a> (CC BY 4.0)</span>
-    <span>Download: <a href="weather.db">weather.db</a> &middot; <a href="data/observations.csv">observations.csv</a> &middot; <a href="data/forecasts.csv">forecasts.csv</a> &middot; <a href="data/daily_forecasts.csv">daily_forecasts.csv</a></span>
-    <span id="gen"></span>
-  </div>
+    <div class="foot">
+      <span>Weather data by <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo.com</a> (CC BY 4.0)</span>
+      <span>TFB2093 Internet of Things project</span>
+      <span id="gen"></span>
+    </div>
+  </main>
 </div>
 
 <script>
@@ -162,28 +297,78 @@ const $ = s => document.querySelector(s);
 const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
 const f1 = (v, d = 1) => v == null || isNaN(v) ? "–" : Number(v).toFixed(d);
 const hhmm = t => t.slice(11, 16);
-const dayLbl = t => new Date(t + ":00").toLocaleDateString("en-MY", {weekday: "short", day: "numeric", month: "short"});
+const toDate = t => new Date(t.length === 10 ? t + "T00:00:00" : t + ":00");
+const dayLbl = t => toDate(t).toLocaleDateString("en-MY", {weekday: "short", day: "numeric", month: "short"});
+const hourLbl = t => { const h = +t.slice(11, 13); return h === 0 ? "12 AM" : h < 12 ? h + " AM" : h === 12 ? "12 PM" : (h - 12) + " PM"; };
 const VARS = {temperature: ["Temperature", "°C"], humidity: ["Humidity", "%"], rain: ["Rainfall", "mm"], wind: ["Wind", "km/h"]};
 const COLORS = {temperature: "--fc", humidity: "--hum", rain: "--rain", wind: "--wind"};
-let D, charts = {}, sel = {v: "temperature", h: 24};
+let D, charts = {}, sel = {v: "temperature", h: 24, range: 72};
 
-// theme toggle (remembered per browser)
-try { const t = localStorage.getItem("theme"); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
-$("#themeBtn").onclick = () => {
-  const dark = document.documentElement.dataset.theme
-    ? document.documentElement.dataset.theme === "dark"
-    : matchMedia("(prefers-color-scheme: dark)").matches;
-  document.documentElement.dataset.theme = dark ? "light" : "dark";
-  try { localStorage.setItem("theme", document.documentElement.dataset.theme); } catch (e) {}
-  drawAll();
+/* ---------- weather icons (inline SVG) ---------- */
+const P = {
+  sun: (cx, cy, r) => {
+    let rays = "";
+    for (let i = 0; i < 8; i++) {
+      const a = i * Math.PI / 4, x1 = cx + Math.cos(a) * (r + 4), y1 = cy + Math.sin(a) * (r + 4),
+            x2 = cx + Math.cos(a) * (r + 9), y2 = cy + Math.sin(a) * (r + 9);
+      rays += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#ffc83d" stroke-width="3.2" stroke-linecap="round"/>`;
+    }
+    return rays + `<circle cx="${cx}" cy="${cy}" r="${r}" fill="url(#gSun)"/>`;
+  },
+  moon: (cx, cy, r) => `<path d="M${cx + r * .35} ${cy - r} a${r} ${r} 0 1 0 ${r * .65} ${r * 1.55} a${r * .8} ${r * .8} 0 0 1 -${r * .65} -${r * 1.55}z" fill="url(#gMoon)"/>`,
+  cloud: (dy = 0, dark = false) => `<g transform="translate(0 ${dy})" fill="url(#${dark ? "gCloudDark" : "gCloud"})">
+      <circle cx="24" cy="38" r="10"/><circle cx="35" cy="31" r="13"/><circle cx="47" cy="38" r="9"/><rect x="14" y="36" width="42" height="12" rx="6"/></g>`,
+  drops: n => [18, 28, 38, 48].slice(0, n).map((x, i) => `<line x1="${x + 2}" y1="${50 + (i % 2) * 2}" x2="${x - 1}" y2="${58 + (i % 2) * 2}" stroke="url(#gDrop)" stroke-width="3.6" stroke-linecap="round"/>`).join(""),
+  bolt: () => `<path d="M36 44 l-6 10 h6 l-4 9 l11 -13 h-6 l4 -6z" fill="#ffd23f"/>`,
 };
+function iconSVG(kind, night) {
+  switch (kind) {
+    case "clear": return night ? P.moon(30, 30, 16) : P.sun(32, 32, 14);
+    case "partly": return (night ? P.moon(22, 20, 11) : P.sun(23, 23, 10)) + P.cloud(4);
+    case "cloudy": return P.cloud(-2, true).replace('translate(0 -2)', 'translate(-6 -8) scale(.85)') + P.cloud(4);
+    case "rain": return (night ? "" : P.sun(22, 18, 9)) + P.cloud(-4) + P.drops(4);
+    case "showers": return P.cloud(-4) + P.drops(3);
+    case "storm": return P.cloud(-6, true) + P.bolt() + P.drops(2).replace(/stroke="url\(#gDrop\)"/g, 'stroke="#7cc4ff"');
+  }
+  return P.cloud(0);
+}
+const isNight = t => { const h = +t.slice(11, 13); return h < 7 || h >= 19; };
+function kindFromForecast(prob, mm) {
+  prob = prob || 0; mm = mm || 0;
+  if (mm >= 3 || prob >= 85) return "storm";
+  if (mm >= 0.5 || prob >= 60) return "rain";
+  if (mm >= 0.1 || prob >= 40) return "showers";
+  if (prob >= 20) return "partly";
+  return "clear";
+}
+function kindFromWmo(c) {
+  if (c == null) return "partly";
+  if (c <= 1) return "clear"; if (c === 2) return "partly"; if (c === 3 || c === 45 || c === 48) return "cloudy";
+  if (c >= 95) return "storm"; if (c >= 80) return "showers"; if (c >= 51) return "rain";
+  return "partly";
+}
+const KIND_TEXT = {clear: "Clear", partly: "Partly cloudy", cloudy: "Cloudy", showers: "Light showers", rain: "Rain", storm: "Thunderstorm"};
+const WMO = {0:"Clear sky",1:"Mainly clear",2:"Partly cloudy",3:"Overcast",45:"Fog",48:"Fog",51:"Light drizzle",53:"Drizzle",55:"Heavy drizzle",61:"Light rain",63:"Rain",65:"Heavy rain",80:"Rain showers",81:"Rain showers",82:"Violent showers",95:"Thunderstorm",96:"Thunderstorm, hail",99:"Thunderstorm, hail"};
 
+document.getElementById("logoSvg").innerHTML = iconSVG("partly", false);
+
+/* ---------- navigation ---------- */
+function show(view) {
+  document.querySelectorAll(".nav").forEach(b => b.classList.toggle("on", b.dataset.view === view));
+  document.querySelectorAll(".view").forEach(v => v.classList.toggle("on", v.id === "v-" + view));
+  try { localStorage.setItem("view", view); } catch (e) {}
+  if (D) drawAll();
+}
+document.querySelectorAll(".nav").forEach(b => b.onclick = () => show(b.dataset.view));
+
+/* ---------- charts ---------- */
 function baseOpts(yTitle) {
   Chart.defaults.color = css("--muted");
   Chart.defaults.font.family = "Inter, system-ui, sans-serif";
   return {
     responsive: true, maintainAspectRatio: false, interaction: {mode: "index", intersect: false},
-    plugins: {legend: {labels: {boxWidth: 12, boxHeight: 12, usePointStyle: true}}},
+    plugins: {legend: {labels: {boxWidth: 10, boxHeight: 10, usePointStyle: true}},
+      tooltip: {backgroundColor: "#0f1720", borderColor: css("--line"), borderWidth: 1, padding: 10}},
     scales: {
       x: {grid: {color: css("--line")}, ticks: {maxRotation: 0, autoSkipPadding: 18}},
       y: {grid: {color: css("--line")}, title: {display: !!yTitle, text: yTitle}}
@@ -192,121 +377,183 @@ function baseOpts(yTitle) {
 }
 function mk(id, cfg) { if (charts[id]) charts[id].destroy(); charts[id] = new Chart($(id), cfg); }
 
-const WMO = {0:"Clear",1:"Mainly clear",2:"Partly cloudy",3:"Overcast",45:"Fog",48:"Fog",51:"Light drizzle",53:"Drizzle",55:"Heavy drizzle",61:"Light rain",63:"Rain",65:"Heavy rain",80:"Rain showers",81:"Rain showers",82:"Violent showers",95:"Thunderstorm",96:"Thunderstorm, hail",99:"Thunderstorm, hail"};
-
-function drawNow() {
+/* ---------- WEATHER view ---------- */
+function drawWeather() {
   const c = D.current;
-  if (!c) { $("#now").innerHTML = '<div class="empty">No data yet. The first run will appear within 30 minutes.</div>'; return; }
-  const cards = [
-    ["Temperature", f1(c.temperature), "°C", WMO[c.weather_code] || ""],
-    ["Humidity", f1(c.humidity, 0), "%", "Relative humidity"],
-    ["Rainfall", f1(c.rain), "mm", "Last 15 minutes"],
-    ["Wind speed", f1(c.wind), "km/h", "At 10 m"],
-  ];
-  $("#now").innerHTML = cards.map(([l, v, u, s]) =>
-    `<div class="card stat"><div class="label">${l}</div><div class="value">${v}<span class="unit">${u}</span></div><div class="label">${s}</div></div>`).join("");
+  if (!c) { $("#heroCond").textContent = "Waiting for the first data run"; return; }
+  const night = isNight(c.time), kind = kindFromWmo(c.weather_code);
+  $("#heroIcon").innerHTML = iconSVG(kind, night);
+  $("#heroTemp").innerHTML = `${f1(c.temperature, 0)}<sup>°C</sup>`;
+  $("#heroCond").textContent = `${WMO[c.weather_code] || KIND_TEXT[kind]} · updated ${hhmm(c.time)}`;
+  $("#heroSub").textContent = `Chance of rain (next 3 h): ${D.alert ? f1(D.alert.max_prob_pct, 0) + "%" : "–"}`;
+
   const a = D.alert;
   if (a) $("#alert").innerHTML = `<div class="alert ${a.level}"><div class="lamp"><i></i></div><div><b>${a.text}</b>
-    <span>Highest chance of rain ${f1(a.max_prob_pct, 0)}% &middot; ${f1(a.total_mm)} mm expected &middot; same rule as the ESP32 rain-alert device</span></div></div>`;
-}
+    <span>Highest chance of rain ${f1(a.max_prob_pct, 0)}% &middot; ${f1(a.total_mm)} mm expected &middot; same rule as the ESP32 rain-alert station</span></div></div>`;
 
-function draw24() {
-  const n = D.next24;
-  if (!n.length) return;
-  const o = baseOpts();
-  o.scales.y = {position: "left", grid: {color: css("--line")}, title: {display: true, text: "°C"}};
-  o.scales.y1 = {position: "right", grid: {display: false}, title: {display: true, text: "mm / %"}, min: 0, suggestedMax: 100};
-  mk("#c24", {type: "bar", options: o, data: {
-    labels: n.map(r => hhmm(r.t)),
+  const n = D.next24.filter((_, i) => i % 3 === 0).slice(0, 8);
+  $("#hours").innerHTML = n.map(r => `<div class="hr"><div class="t">${hourLbl(r.t)}</div>
+      <svg viewBox="0 0 64 64">${iconSVG(kindFromForecast(r.rain_prob, r.rain), isNight(r.t))}</svg>
+      <div class="v">${f1(r.temperature, 0)}°</div><div class="p">${f1(r.rain_prob, 0)}%</div></div>`).join("");
+
+  const ic = {
+    hum: '<path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/>',
+    wind: '<path d="M3 8h11a3 3 0 1 0-3-3M3 12h16a3 3 0 1 1-3 3M3 16h8"/>',
+    rain: '<path d="M7 15a4 4 0 0 1 .5-8 6 6 0 0 1 11.4 1.6A3.5 3.5 0 0 1 18 15M8 19l-1 2M12 18l-1 3M16 19l-1 2"/>',
+    prob: '<path d="M4 14a8 8 0 0 1 16 0M12 14V4M12 14l4-3"/>',
+  };
+  const condRow = (svg, l, v, u) => `<div class="cond"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">${svg}</svg>
+      <div><div class="l">${l}</div><div class="n">${v}<span style="font-size:15px;color:var(--muted);font-weight:500"> ${u}</span></div></div></div>`;
+  $("#conds").innerHTML = condRow(ic.hum, "Humidity", f1(c.humidity, 0), "%") + condRow(ic.wind, "Wind speed", f1(c.wind), "km/h")
+    + condRow(ic.rain, "Rainfall now", f1(c.rain), "mm") + condRow(ic.prob, "Chance of rain (3 h)", a ? f1(a.max_prob_pct, 0) : "–", "%");
+  $("#condTime").textContent = "Current conditions at " + hhmm(c.time);
+
+  const o = D.outlook || [];
+  $("#outlook").innerHTML = o.length ? o.map(d => {
+    const k = kindFromForecast(d.rain_prob, d.rain / 6);
+    const name = d.lead === 0 ? "Today" : d.lead === 1 ? "Tomorrow" : toDate(d.date).toLocaleDateString("en-MY", {weekday: "long"});
+    return `<div class="day"><div class="dn">${name}</div><svg viewBox="0 0 64 64">${iconSVG(k, false)}</svg>
+      <div class="dl">${KIND_TEXT[k]}<small>${f1(d.rain_prob, 0)}% · ${f1(d.rain)} mm</small></div>
+      <div class="dt">${f1(d.tmax, 0)}°<span> / ${f1(d.tmin, 0)}°</span></div></div>`;
+  }).join("") : '<div class="empty">No daily forecast yet.</div>';
+
+  const n24 = D.next24;
+  if (!n24.length) return;
+  const op = baseOpts();
+  op.scales.y = {position: "left", grid: {color: css("--line")}, title: {display: true, text: "°C"}};
+  op.scales.y1 = {position: "right", grid: {display: false}, min: 0, suggestedMax: 100, title: {display: true, text: "mm / %"}};
+  mk("#c24", {type: "bar", options: op, data: {
+    labels: n24.map(r => hhmm(r.t)),
     datasets: [
-      {type: "line", label: "Temperature (°C)", data: n.map(r => r.temperature), borderColor: css("--fc"), backgroundColor: css("--fc"), tension: .35, pointRadius: 0, borderWidth: 2.5, yAxisID: "y"},
-      {type: "line", label: "Chance of rain (%)", data: n.map(r => r.rain_prob), borderColor: css("--rain"), borderDash: [5, 4], pointRadius: 0, borderWidth: 1.8, yAxisID: "y1"},
-      {type: "bar", label: "Rainfall (mm)", data: n.map(r => r.rain), backgroundColor: css("--rain") + "99", borderRadius: 4, yAxisID: "y1"},
+      {type: "line", label: "Temp", data: n24.map(r => r.temperature), borderColor: css("--fc"), backgroundColor: css("--fc"), tension: .35, pointRadius: 0, borderWidth: 2.5, yAxisID: "y"},
+      {type: "line", label: "Chance %", data: n24.map(r => r.rain_prob), borderColor: css("--rain"), borderDash: [5, 4], pointRadius: 0, borderWidth: 1.8, yAxisID: "y1"},
+      {type: "bar", label: "Rain mm", data: n24.map(r => r.rain), backgroundColor: css("--rain") + "99", borderRadius: 4, yAxisID: "y1"},
     ]}});
 }
 
-function bucketFor(h) { return h <= 6 ? "1-6 h" : h <= 12 ? "7-12 h" : h <= 24 ? "13-24 h" : h <= 48 ? "25-48 h" : "49-72 h"; }
-
-function drawFA() {
-  const {v, h} = sel, [name, unit] = VARS[v], s = D.series;
+/* ---------- ACCURACY view ---------- */
+function drawAccuracy() {
+  const {v, h, range} = sel, [, unit] = VARS[v];
   $("#varTabs").innerHTML = Object.entries(VARS).map(([k, [n]]) => `<button class="${k === v ? "on" : ""}" data-v="${k}">${n}</button>`).join("");
-  $("#hzTabs").innerHTML = D.series_horizons.map(x => `<button class="${x === h ? "on" : ""}" data-h="${x}">${x} h</button>`).join("");
+  $("#hzTabs").innerHTML = D.series_horizons.map(x => `<button class="${x === h ? "on" : ""}" data-h="${x}">${x} h ahead</button>`).join("");
+  $("#rangeTabs").innerHTML = [[24, "Last 24 h"], [72, "Last 3 days"], [168, "Last 7 days"], [0, "All data"]]
+    .map(([r, l]) => `<button class="${r === range ? "on" : ""}" data-r="${r}">${l}</button>`).join("");
   $("#hzTxt").textContent = h === 1 ? "1 hour" : h + " hours";
-  document.querySelectorAll("#varTabs button").forEach(b => b.onclick = () => { sel.v = b.dataset.v; drawFA(); drawHZ(); });
-  document.querySelectorAll("#hzTabs button").forEach(b => b.onclick = () => { sel.h = +b.dataset.h; drawFA(); });
-  if (!s.length) return;
-  const o = baseOpts(unit);
-  if (v === "rain") o.scales.y.min = 0;
-  o.scales.x.ticks.callback = val => { const t = s[val].t; return hhmm(t) === "00:00" ? dayLbl(t) : hhmm(t); };
-  mk("#cfa", {type: v === "rain" ? "bar" : "line", options: o, data: {
-    labels: s.map(r => r.t.replace("T", " ")),
-    datasets: [
-      {type: "line", label: "Actual", data: s.map(r => r[v]), borderColor: css("--actual"), backgroundColor: css("--actual"), pointRadius: 0, borderWidth: 2, tension: .3},
-      {type: v === "rain" ? "bar" : "line", label: `Forecast (${h} h ahead)`, data: s.map(r => r[`${v}_f${h}`]), borderColor: css(COLORS[v]), backgroundColor: css(COLORS[v]) + (v === "rain" ? "aa" : ""), pointRadius: 0, borderWidth: 2, borderDash: v === "rain" ? [] : [6, 4], tension: .3},
-    ]}});
-  const b = D.accuracy[v].by_horizon.find(x => x.h === h);
-  $("#faKpis").innerHTML = b ? `<span>Pairs <b>${b.n}</b></span><span>MAE <b>${f1(b.mae, 2)} ${unit}</b></span><span>RMSE <b>${f1(b.rmse, 2)} ${unit}</b></span><span>Bias <b>${b.bias > 0 ? "+" : ""}${f1(b.bias, 2)} ${unit}</b></span>`
-    : `<span>Not enough data yet for ${h} h ahead. Check back after ${h} hours of collection.</span>`;
-}
+  document.querySelectorAll("#varTabs button").forEach(b => b.onclick = () => { sel.v = b.dataset.v; drawAccuracy(); });
+  document.querySelectorAll("#hzTabs button").forEach(b => b.onclick = () => { sel.h = +b.dataset.h; drawAccuracy(); });
+  document.querySelectorAll("#rangeTabs button").forEach(b => b.onclick = () => { sel.range = +b.dataset.r; drawAccuracy(); });
 
-function drawHZ() {
-  const v = sel.v, a = D.accuracy[v], unit = a.unit;
-  const o = baseOpts(unit);
-  o.scales.x.title = {display: true, text: "Hours ahead"};
-  mk("#chz", {type: "line", options: o, data: {
+  let s = D.series;
+  if (range) s = s.slice(-range);
+  if (s.length) {
+    const o = baseOpts(unit);
+    if (v === "rain") o.scales.y.min = 0;
+    o.scales.x.ticks.callback = val => { const t = s[val].t; return hhmm(t) === "00:00" ? dayLbl(t) : hhmm(t); };
+    mk("#cfa", {type: v === "rain" ? "bar" : "line", options: o, data: {
+      labels: s.map(r => r.t.replace("T", " ")),
+      datasets: [
+        {type: "line", label: "Actual", data: s.map(r => r[v]), borderColor: css("--actual"), backgroundColor: css("--actual"), pointRadius: 0, borderWidth: 2, tension: .3},
+        {type: v === "rain" ? "bar" : "line", label: `Forecast (${h} h ahead)`, data: s.map(r => r[`${v}_f${h}`]), borderColor: css(COLORS[v]),
+          backgroundColor: css(COLORS[v]) + (v === "rain" ? "bb" : ""), pointRadius: 0, borderWidth: 2, borderDash: v === "rain" ? [] : [6, 4], tension: .3},
+      ]}});
+  }
+  const b = D.accuracy[v].by_horizon.find(x => x.h === h);
+  const k = (l, n) => `<div class="kpi"><div class="l">${l}</div><div class="n">${n}</div></div>`;
+  $("#faKpis").innerHTML = b ? k("Pairs", b.n) + k("MAE", `${f1(b.mae, 2)} ${unit}`) + k("RMSE", `${f1(b.rmse, 2)} ${unit}`) + k("Bias", `${b.bias > 0 ? "+" : ""}${f1(b.bias, 2)} ${unit}`)
+    : `<div class="empty">Not enough data yet for ${h} h ahead.</div>`;
+
+  const a = D.accuracy[v], o2 = baseOpts(unit);
+  o2.scales.x.title = {display: true, text: "Hours ahead"};
+  mk("#chz", {type: "line", options: o2, data: {
     labels: a.by_horizon.map(r => r.h),
     datasets: [
-      {label: `MAE (${unit})`, data: a.by_horizon.map(r => r.mae), borderColor: css(COLORS[v]), backgroundColor: css(COLORS[v]) + "22", fill: true, pointRadius: 0, borderWidth: 2, tension: .3},
-      {label: `Bias (${unit})`, data: a.by_horizon.map(r => r.bias), borderColor: css("--muted"), pointRadius: 0, borderWidth: 1.5, borderDash: [4, 4], tension: .3},
+      {label: "MAE", data: a.by_horizon.map(r => r.mae), borderColor: css(COLORS[v]), backgroundColor: css(COLORS[v]) + "26", fill: true, pointRadius: 0, borderWidth: 2, tension: .3},
+      {label: "Bias", data: a.by_horizon.map(r => r.bias), borderColor: css("--muted"), pointRadius: 0, borderWidth: 1.5, borderDash: [4, 4], tension: .3},
     ]}});
+
+  // insights
+  const ins = [];
+  const t = D.accuracy.temperature;
+  const first = t.buckets[0], last = t.buckets[t.buckets.length - 1];
+  if (first.mae != null && last.mae != null)
+    ins.push(`Temperature error grows from <b>${f1(first.mae, 2)} °C</b> (1–6 h ahead) to <b>${f1(last.mae, 2)} °C</b> (49–72 h ahead).`);
+  if (t.overall.bias != null)
+    ins.push(`On average the temperature forecast is <b>${Math.abs(t.overall.bias).toFixed(2)} °C ${t.overall.bias >= 0 ? "too warm" : "too cool"}</b>.`);
+  const h1 = D.accuracy.humidity.overall;
+  if (h1.mae != null) ins.push(`Humidity forecasts are off by <b>${f1(h1.mae, 1)}%</b> on average.`);
+  const r = D.rain_skill.overall;
+  if (r.pod != null) ins.push(`The forecast caught <b>${f1(r.pod * 100, 0)}%</b> of rainy hours, but <b>${f1((r.far || 0) * 100, 0)}%</b> of its rain alerts were false alarms.`);
+  $("#insights").innerHTML = ins.map(x => `<div class="insight">${x}</div>`).join("") || '<div class="empty">Findings appear after a few hours of data.</div>';
+
+  const buckets = D.accuracy.temperature.buckets.map(b => b.bucket);
+  let html = `<tr><th>Variable</th><th>Metric</th>${buckets.map(b => `<th>${b}</th>`).join("")}<th>All</th></tr>`;
+  for (const a2 of Object.values(D.accuracy))
+    for (const m of ["mae", "rmse", "bias"])
+      html += `<tr><td>${m === "mae" ? `<b>${a2.label}</b> (${a2.unit})` : ""}</td><td style="text-align:right">${m.toUpperCase()}</td>${a2.buckets.map(b => `<td>${f1(b[m], 2)}</td>`).join("")}<td>${f1(a2.overall[m], 2)}</td></tr>`;
+  $("#accTable").innerHTML = html;
 }
 
-function drawTables() {
-  const buckets = D.accuracy.temperature.buckets.map(b => b.bucket);
-  let h = `<tr><th>Variable</th><th>Metric</th>${buckets.map(b => `<th>${b}</th>`).join("")}<th>All</th></tr>`;
-  for (const [k, a] of Object.entries(D.accuracy)) {
-    for (const m of ["mae", "rmse", "bias"]) {
-      h += `<tr><td>${m === "mae" ? `<b>${a.label}</b> (${a.unit})` : ""}</td><td style="text-align:right">${m.toUpperCase()}</td>${a.buckets.map(b => `<td>${f1(b[m], 2)}</td>`).join("")}<td>${f1(a.overall[m], 2)}</td></tr>`;
-    }
-  }
-  $("#accTable").innerHTML = h;
-
+/* ---------- RAIN view ---------- */
+function drawRain() {
   const r = D.rain_skill; $("#thr").textContent = r.threshold_mm;
   $("#rainTable").innerHTML = `<tr><th>Horizon</th><th>POD</th><th>FAR</th><th>CSI</th><th>Accuracy</th><th>Brier</th></tr>` +
     [...r.buckets, {bucket: "All", ...r.overall}].map(b => `<tr><td>${b.bucket}</td><td>${f1(b.pod, 2)}</td><td>${f1(b.far, 2)}</td><td>${f1(b.csi, 2)}</td><td>${b.accuracy == null ? "–" : f1(b.accuracy * 100, 0) + "%"}</td><td>${f1(b.brier, 3)}</td></tr>`).join("");
   const o = r.overall;
   $("#matrix").innerHTML = `<div class="h"></div><div class="h">Actual: rain</div><div class="h">Actual: no rain</div>
-    <div class="h">Forecast: rain</div><div><div class="n good">${o.hits}</div>Hits</div><div><div class="n bad">${o.false_alarms}</div>False alarms</div>
-    <div class="h">Forecast: no rain</div><div><div class="n bad">${o.misses}</div>Misses</div><div><div class="n good">${o.correct_negatives}</div>Correct no-rain</div>`;
+    <div class="h">Forecast:<br>rain</div><div><div class="n good">${o.hits}</div>Hits</div><div><div class="n bad">${o.false_alarms}</div>False alarms</div>
+    <div class="h">Forecast:<br>no rain</div><div><div class="n bad">${o.misses}</div>Misses</div><div><div class="n good">${o.correct_negatives}</div>Correct no-rain</div>`;
 
   const nd = D.next_day;
-  $("#ndTable").innerHTML = nd.length ? `<tr><th>Date</th><th>Max °C (F / A)</th><th>Min °C (F / A)</th><th>Rain mm (F / A)</th></tr>` +
-    nd.map(d => `<tr><td>${dayLbl(d.date + "T00:00")}</td><td>${f1(d.tmax_f)} / ${f1(d.tmax_a)}</td><td>${f1(d.tmin_f)} / ${f1(d.tmin_a)}</td><td>${f1(d.rain_f)} / ${f1(d.rain_a)}</td></tr>`).join("")
+  $("#ndTable").innerHTML = nd.length ? `<tr><th>Date</th><th>Max °C (F / A)</th><th>Min °C (F / A)</th><th>Rain mm (F / A)</th><th>Chance of rain</th></tr>` +
+    nd.map(d => `<tr><td>${dayLbl(d.date)}</td><td>${f1(d.tmax_f)} / ${f1(d.tmax_a)}</td><td>${f1(d.tmin_f)} / ${f1(d.tmin_a)}</td><td>${f1(d.rain_f)} / ${f1(d.rain_a)}</td><td>${f1(d.rain_prob_f, 0)}%</td></tr>`).join("")
     : `<tr><td class="empty">Needs one full day of data first.</td></tr>`;
+  if (nd.length) {
+    const op = baseOpts("mm");
+    mk("#cnd", {type: "bar", options: op, data: {labels: nd.map(d => dayLbl(d.date)), datasets: [
+      {label: "Forecast rain (mm)", data: nd.map(d => d.rain_f), backgroundColor: css("--rain") + "88", borderRadius: 6},
+      {label: "Actual rain (mm)", data: nd.map(d => d.rain_a), backgroundColor: css("--actual") + "cc", borderRadius: 6},
+    ]}});
+  }
+}
+
+/* ---------- DATA view ---------- */
+function drawData() {
+  const st = D.status || {};
+  const sv = (l, v) => `<div class="stat"><div class="l">${l}</div><div class="n">${v}</div></div>`;
+  $("#logStats").innerHTML =
+    sv("Collecting since", st.first_issue ? dayLbl(st.first_issue) + " " + hhmm(st.first_issue) : "–") +
+    sv("Continuous hourly record", st.longest_continuous_h != null ? (st.longest_continuous_h / 24).toFixed(1) + " days" : "–") +
+    sv("Hourly coverage (actual)", st.coverage_pct != null ? st.coverage_pct + "%" : "–") +
+    sv("Forecast snapshots", st.forecast_snapshots != null ? `${st.forecast_snapshots} <span style="font-size:13px;color:var(--muted)">every ~${f1(st.avg_snapshot_gap_h)} h</span>` : "–");
   const da = D.daily_actual;
   $("#dayTable").innerHTML = da.length ? `<tr><th>Date</th><th>Max °C</th><th>Min °C</th><th>Rain mm</th><th>Hum %</th><th>Wind max</th></tr>` +
-    da.map(d => `<tr><td>${dayLbl(d.date + "T00:00")}</td><td>${f1(d.tmax)}</td><td>${f1(d.tmin)}</td><td>${f1(d.rain)}</td><td>${f1(d.hum_mean, 0)}</td><td>${f1(d.wind_max)}</td></tr>`).join("")
+    da.slice().reverse().map(d => `<tr><td>${dayLbl(d.date)}</td><td>${f1(d.tmax)}</td><td>${f1(d.tmin)}</td><td>${f1(d.rain)}</td><td>${f1(d.hum_mean, 0)}</td><td>${f1(d.wind_max)}</td></tr>`).join("")
     : `<tr><td class="empty">Needs one full day of data first.</td></tr>`;
+  $("#runTable").innerHTML = `<tr><th>Run (UTC)</th><th>Status</th><th>Rows</th></tr>` +
+    D.recent_runs.map(r => `<tr><td>${r.run_at_utc.replace("T", " ").replace("Z", "")}</td><td class="${r.status === "ok" ? "good" : "bad"}">${r.status}</td><td>${r.forecast_rows}</td></tr>`).join("");
+}
 
+function drawStatus() {
   const st = D.status || {};
-  $("#logStats").innerHTML = [
-    ["Collecting since", st.first_issue ? dayLbl(st.first_issue) + " " + hhmm(st.first_issue) : "–"],
-    ["Continuous hourly record", st.longest_continuous_h != null ? (st.longest_continuous_h / 24).toFixed(1) + " days" : "–"],
-    ["Hourly coverage (actual)", st.coverage_pct != null ? st.coverage_pct + "%" : "–"],
-    ["Forecast snapshots", st.forecast_snapshots != null ? `${st.forecast_snapshots} (every ~${f1(st.avg_snapshot_gap_h)} h)` : "–"],
-  ].map(([l, v]) => `<div class="stat"><div class="label">${l}</div><div class="value" style="font-size:22px">${v}</div></div>`).join("");
-  $("#runTable").innerHTML = `<tr><th>Run (UTC)</th><th>Forecast hour</th><th>Status</th><th>Rows</th><th>Note</th></tr>` +
-    D.recent_runs.map(r => `<tr><td>${r.run_at_utc.replace("T", " ").replace("Z", "")}</td><td>${r.issued_at.replace("T", " ")}</td><td class="${r.status === "ok" ? "good" : "bad"}">${r.status}</td><td>${r.forecast_rows}</td><td style="text-align:left;font-family:Inter">${r.note || ""}</td></tr>`).join("");
   const days = st.longest_continuous_h != null ? (st.longest_continuous_h / 24).toFixed(1) : 0;
-  $("#status").textContent = st.last_issue ? `Live · ${days} days continuous · last update ${hhmm(D.current.time)}` : "Waiting for first run";
+  $("#status").textContent = st.last_issue ? `Live · ${days} days of hourly data · updated ${D.current ? hhmm(D.current.time) : ""}` : "Waiting for first run";
   $("#gen").textContent = "Generated " + D.generated_at_utc.replace("T", " ").replace("Z", " UTC");
 }
 
-function drawAll() { drawNow(); draw24(); drawFA(); drawHZ(); drawTables(); }
+function drawAll() {
+  drawStatus();
+  const v = document.querySelector(".nav.on").dataset.view;
+  if (v === "weather") drawWeather();
+  if (v === "accuracy") drawAccuracy();
+  if (v === "rain") drawRain();
+  if (v === "data") drawData();
+}
 
-fetch("data.json", {cache: "no-store"}).then(r => r.json()).then(d => { D = d; drawAll(); })
-  .catch(() => { $("#status").textContent = "No data yet"; });
-setInterval(() => fetch("data.json", {cache: "no-store"}).then(r => r.json()).then(d => { D = d; drawAll(); }).catch(() => {}), 10 * 60 * 1000);
+let start = "weather";
+try { start = localStorage.getItem("view") || "weather"; } catch (e) {}
+const load = () => fetch("data.json", {cache: "no-store"}).then(r => r.json()).then(d => { D = d; drawAll(); });
+load().then(() => show(start)).catch(() => { $("#status").textContent = "No data yet"; });
+setInterval(() => load().catch(() => {}), 10 * 60 * 1000);
 </script>
 </body>
 </html>
