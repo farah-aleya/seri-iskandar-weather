@@ -77,3 +77,4 @@ run_at_utc,issued_at,status,forecast_rows,note
 2026-10-30T06:56:15Z,2026-10-30T14:00,ok,0,forecast for this hour already stored
 2026-10-30T07:09:43Z,2026-10-30T15:00,ok,72,
 2026-10-30T07:20:10Z,2026-10-30T15:00,ok,0,forecast for this hour already stored
+2026-10-30T13:27:26Z,2026-10-30T21:00,ok,72,
