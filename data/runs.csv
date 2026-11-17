@@ -145,3 +145,4 @@ run_at_utc,issued_at,status,forecast_rows,note
 2026-11-16T01:52:17Z,2026-11-16T09:00,ok,72,
 2026-11-16T09:28:09Z,2026-11-16T17:00,ok,72,
 2026-11-16T19:47:38Z,2026-11-17T03:00,ok,72,
+2026-11-17T02:52:42Z,,error,0,Open-Meteo request failed after 3 tries: <urlopen error _ssl.c:994: The handshake operation timed out>
