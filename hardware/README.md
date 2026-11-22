@@ -1,8 +1,10 @@
 # Rain-Alert Station (Bonus Hardware)
 
-A standalone ESP32 device that warns when rain is about to fall in Seri Iskandar.
-It combines the Open-Meteo forecast with local sensors, and shows the alert on an
-OLED screen, a traffic light and a buzzer. Code: [`rain_station/rain_station.ino`](rain_station/rain_station.ino)
+A standalone ESP32 device that warns people on site when rain is coming in Seri Iskandar.
+It combines the Open-Meteo forecast with local sensors and shows the alert on an OLED
+screen, a traffic light and a buzzer. It keeps working without internet using a local rule.
+
+Code: [`rain_station/rain_station.ino`](rain_station/rain_station.ino)
 
 ## 1. What it does
 
@@ -14,139 +16,133 @@ OLED screen, a traffic light and a buzzer. Code: [`rain_station/rain_station.ino
 | Otherwise | NO RAIN | Green | Silent |
 | No Wi-Fi | Local rule: humidity ≥ 90% and pressure fell ≥ 1 hPa in 3 h → RAIN POSSIBLE | Same colours | Same |
 
-- The forecast is checked every 10 minutes. The sensors are read every 5 seconds.
+- Sensors are read every 5 seconds; the forecast is downloaded every 10 minutes.
 - The OLED also shows the next-3-hour forecast, temperature, humidity, pressure and how wet the plate is.
-- The top-right corner of the OLED shows **ONLINE** (forecast received) or **LOCAL** (offline, using local sensors).
-- The thresholds and location (4.36°N, 100.97°E) are the same as the web dashboard's rain banner.
+- Top-right of the OLED: **ONLINE** (forecast received) or **LOCAL** (offline, local rule).
+- Thresholds and location (4.36°N, 100.97°E) are the same as the dashboard's rain banner.
 
 ## 2. Parts list
 
 | Part | Used for | Price (RM) |
 |---|---|---|
-| ESP32 Development Board (Type-C) | Main controller, Wi-Fi | 20.95 |
-| GY-BME280 (5V version) | Temperature, humidity, air pressure | 19.99 |
+| ESP32 development board (Type-C) | Main controller, Wi-Fi | 20.95 |
+| GY-BME280 (5V version) | Temperature, humidity, air pressure (I2C) | 19.99 |
 | 1.3" OLED display (I2C, SH1106) | Shows the alert and readings | 23.71 |
-| Raindrop sensor module + plate | Detects rain falling now | 3.80 |
-| Traffic light LED module | Green / yellow / red alert | 2.50 |
+| Raindrop sensor (plate + module) | Detects rain falling now | 3.80 |
+| Traffic light LED module | Green / yellow / red alert (resistors built in) | 2.50 |
 | Passive buzzer module | Audible alert | 2.50 |
-| Breadboard 400 holes | Shared 3V3, GND, SDA, SCL | 2.70 |
-| Jumper wires (male-female, male-male) | Connections | 6.50 |
-| Jumper wires (female-female) | Direct ESP32-to-module connections | Owned |
-| Resistors 51 Ω (20 pcs) | Not needed (LED module has built-in resistors) | 2.00 |
+| Breadboard, 400 holes | Shared 3V3, GND, SDA, SCL | 2.70 |
+| Jumper wires | Connections | 6.50 |
+| Resistors 51 Ω | Spare (not needed) | 2.00 |
 | **Total** | | **84.65** |
 
 ## 3. Wiring
 
 ![Wiring diagram](wiring_diagram.png)
 
-The ESP32 is **not** placed on the breadboard (it is too wide for a 400-hole board).
-The breadboard is only a hub that shares 3V3, GND, SDA and SCL between modules.
+The ESP32 is **not** on the breadboard. The breadboard is only a hub for 3V3, GND, SDA and SCL.
+Use only the **top** + and − rails and the bottom half (rows a to e). Holes a–e in the same column
+are connected.
 
-| Module | Module pin | Connect to | Wire |
-|---|---|---|---|
-| ESP32 | 3V3 | Breadboard **+ rail** | F-M |
-| ESP32 | GND | Breadboard **− rail** | F-M |
-| ESP32 | GPIO 21 | Breadboard **row 10** (SDA hub) | F-M |
-| ESP32 | GPIO 22 | Breadboard **row 12** (SCL hub) | F-M |
-| OLED | VCC | + rail | F-M |
-| OLED | GND | − rail | F-M |
-| OLED | SDA | Row 10 | F-M |
-| OLED | SCL | Row 12 | F-M |
-| BME280 | VIN | ESP32 **VIN** (5V) | F-F |
-| BME280 | GND | − rail | F-M |
-| BME280 | SDA | Row 10 | F-M |
-| BME280 | SCL | Row 12 | F-M |
-| Rain module | VCC | ESP32 **GPIO 32** | F-F |
-| Rain module | GND | − rail | F-M |
-| Rain module | AO | ESP32 **GPIO 34** | F-F |
-| Rain module | DO | Not connected | |
-| Rain plate | 2 pins | Rain module's 2-pin side (either way round) | Wires in the sensor bag |
-| Traffic light | R | ESP32 **GPIO 27** | F-F |
-| Traffic light | Y | ESP32 **GPIO 26** | F-F |
-| Traffic light | G | ESP32 **GPIO 25** | F-F |
-| Traffic light | GND | − rail | F-M |
-| Passive buzzer | S (or I/O) | ESP32 **GPIO 13** | F-F |
-| Passive buzzer | VCC (or +) | + rail | F-M |
-| Passive buzzer | GND (or −) | − rail | F-M |
+![Breadboard holes](breadboard_holes.png)
 
-Design notes:
-- The OLED and BME280 share one I2C bus (SDA 21, SCL 22). They have different addresses (OLED 0x3C, BME280 0x76 or 0x77), so they do not clash.
-- The rain sensor is powered from GPIO 32 **only while it is being read**. This keeps its output at 3.3 V (safe for the ESP32) and slows corrosion of the plate.
-- GPIO 34 is an ADC1 pin, so analog readings still work while Wi-Fi is on.
-- The BME280 5V version has its own regulator, so it is powered from VIN (5V from USB).
+### ESP32 to breadboard
+| ESP32 pin | Breadboard hole |
+|---|---|
+| 3V3 | + rail |
+| GND | − rail |
+| D21 (SDA) | a10 |
+| D22 (SCL) | a15 |
 
-## 4. Build steps
+### Modules
+| Module | Pin | Goes to |
+|---|---|---|
+| OLED | VCC | + rail |
+| OLED | GND | − rail |
+| OLED | SDA | b10 |
+| OLED | SCK (= SCL) | b15 |
+| BME280 | VIN | **ESP32 VIN (5V)** |
+| BME280 | GND | − rail |
+| BME280 | SDI (= SDA) | c10 |
+| BME280 | SCK (= SCL) | c15 |
+| BME280 | 3Vo, SDO, CS | Not connected (keeps I2C mode) |
+| Rain plate | 2 pins | Rain module's 2-pin side (either way round) |
+| Rain module | VCC | ESP32 D32 |
+| Rain module | GND | − rail |
+| Rain module | AO | ESP32 D34 |
+| Rain module | DO | Not connected |
+| Traffic light | R / Y / G | ESP32 D27 / D26 / D25 |
+| Traffic light | GND | − rail |
+| Passive buzzer | S (or I/O) | ESP32 D13 |
+| Passive buzzer | VCC / GND | + rail / − rail |
 
-Unplug the USB cable while wiring.
+**Check before power-on:** **3** wires on the + rail (ESP32 3V3, OLED, buzzer), **6** wires on the − rail, **3** wires each in columns 10 and 15. Nothing on the bottom rails or rows f–j.
 
-1. **Breadboard rails.** Connect ESP32 **3V3** to the red **+** rail and ESP32 **GND** to the blue **−** rail.
-2. **I2C hub.** Connect ESP32 **GPIO 21** to a hole in row 10 and **GPIO 22** to a hole in row 12. Each row of 5 holes is connected inside the breadboard.
-3. **OLED.** VCC → + rail, GND → − rail, SDA → row 10, SCL → row 12.
-4. **BME280.** VIN → ESP32 VIN, GND → − rail, SDA → row 10, SCL → row 12.
-5. **Rain sensor.** Connect the plate to the small module with its 2 wires. Module VCC → GPIO 32, GND → − rail, AO → GPIO 34. Leave DO empty.
-6. **Traffic light.** R → GPIO 27, Y → GPIO 26, G → GPIO 25, GND → − rail.
-7. **Buzzer.** S → GPIO 13, VCC → + rail, GND → − rail.
-8. **Check** every GND goes to the − rail and nothing touches the + and − rails at the same time.
+### Wires used
+22 connections: 9 female-male, 7 female-female (ESP32 straight to module), and 6 joined
+female-female + male-male pairs (a joined pair works as a female-male wire). Tape the joints.
 
-## 5. Software setup and upload
+### Design notes
+- OLED (0x3C) and BME280 (0x76) share one I2C bus; their addresses are different, so they do not clash.
+- The I2C bus runs at **100 kHz** for reliability over long jumper wires.
+- The rain sensor is powered from D32 **only while reading**, which keeps its output at 3.3 V and slows corrosion of the plate.
+- D34 is an ADC1 pin, so analog reading works while Wi-Fi is on.
+- This BME280 is the **5V version** (it has its own regulator), so it must be powered from VIN, not 3V3.
 
-1. Install the [Arduino IDE](https://www.arduino.cc/en/software).
-2. **File → Preferences → Additional boards manager URLs**, paste:
+## 4. Software
+
+1. Install the Arduino IDE.
+2. **File → Preferences → Additional boards manager URLs:**
    `https://espressif.github.io/arduino-esp32/package_esp32_index.json`
-3. **Tools → Board → Boards Manager**, install **esp32 by Espressif Systems**.
-4. **Tools → Manage Libraries**, install:
-   - **U8g2** by oliver
-   - **Adafruit BME280 Library** (click *Install all* to add Adafruit Unified Sensor)
-   - **ArduinoJson** by Benoit Blanchon (version 7)
-5. Open `rain_station/rain_station.ino` and set your Wi-Fi:
-   ```cpp
-   const char* WIFI_SSID = "YOUR_WIFI_NAME";
-   const char* WIFI_PASS = "YOUR_WIFI_PASSWORD";
-   ```
-   Use a **phone hotspot on 2.4 GHz**. UTP Wi-Fi needs a username login, which the ESP32 cannot do.
-6. **Tools → Board → esp32 → ESP32 Dev Module**, then **Tools → Port** → your COM port.
-7. Click **Upload**. If it stays on "Connecting...", hold the **BOOT** button until uploading starts.
-8. Open **Tools → Serial Monitor** at **115200** baud.
+3. **Boards Manager:** install **esp32 by Espressif Systems**.
+4. **Library Manager:** install **U8g2** (oliver), **Adafruit BME280 Library** (click *Install all*), **ArduinoJson** (Benoit Blanchon, v7).
+5. In `rain_station.ino`, set `WIFI_SSID` and `WIFI_PASS`. Use a **2.4 GHz phone hotspot**
+   (UTP Wi-Fi needs a login the ESP32 cannot do). Do not commit your real password.
+6. **Board:** ESP32 Dev Module, then pick the COM port and click Upload
+   (hold **BOOT** if it stays on "Connecting...").
+7. **Serial Monitor:** 115200 baud.
 
-On power-up the station runs a self-test: green, yellow, red light up in turn, then one beep.
-Then the OLED shows the alert, and the Serial Monitor prints a line every 5 seconds, for example:
+On power-up: green → yellow → red self-test, one beep, then the OLED shows the alert.
+The Serial Monitor prints a line every 5 s, for example:
 
 ```
-Forecast next 3 h: max chance 69%, total 0.9 mm
 T=29.4C H=82% P=1008.6hPa trend3h=nan rainRaw=4095 wet=0% -> RAIN POSSIBLE
 ```
 
-(`trend3h` shows `nan` for the first 3 hours while the pressure history fills up.)
+`trend3h` shows `nan` for the first 3 hours while the pressure history fills up.
 
-## 6. Calibrating the rain sensor
+### Quick I2C test
+Before the main code, upload a simple I2C scanner. You should see `0x3C` (OLED) and `0x76` or `0x77` (BME280).
 
-1. With the plate dry, note the `wet=` value in the Serial Monitor (usually 0 to 5%).
-2. Drip a few drops of water on the plate and note the new `wet=` value.
-3. Set `RAIN_WET_PERCENT` near the top of the code to a number between the two (default 30), and upload again.
-4. Dry the plate after testing.
+## 5. Calibrating the rain sensor
 
-**Demo tip for the video:** drip water on the plate to show RAINING NOW (red blinking + beeps), then wipe it dry to return to the forecast-based colour.
+1. Dry plate: note the `wet=` value (usually 0–5%).
+2. Drip water across several lines of the plate and note the new `wet=` value.
+3. Set `RAIN_WET_PERCENT` (default 30) between the two values and upload again.
 
-## 7. Troubleshooting
+Demo: spread water over the plate to show RAINING NOW (red blinking + beeps), then wipe it dry.
+
+## 6. Troubleshooting
 
 | Problem | Fix |
 |---|---|
-| No COM port appears | Use a USB cable that carries data. Install the CH340 or CP210x driver (check the chip on the board). |
-| OLED blank | Check VCC/GND, and that SDA is on row 10 and SCL on row 12. |
-| OLED shows noise or the picture is shifted | Your OLED uses the SSD1306 chip. Swap the `U8G2_SH1106...` line for the `U8G2_SSD1306...` line in the comment above it. |
-| "BME280 not found" | Check SDA/SCL. If it still fails, the board may be a BMP280 (no humidity). |
-| OLED shows LOCAL / "no forecast" | Wi-Fi failed. Check the hotspot name, password and 2.4 GHz setting. |
-| Wrong LED lights up | Swap the R/Y/G wires so they match GPIO 27 / 26 / 25. |
-| Buzzer silent | Check S is on GPIO 13. Some modules label the signal pin **I/O**. |
-| Plate always WET | The plate is still damp, or `RAIN_WET_PERCENT` is too low. |
+| No COM port | Use a data USB cable; install the CH340 or CP210x driver. |
+| OLED blank | Check VCC/GND and that SDA is in column 10, SCK in column 15. |
+| OLED noisy or shifted | Swap the `U8G2_SH1106...` line for the `U8G2_SSD1306...` line in the comment. |
+| "BME280 not found" | A wire was loose at start-up. Push VIN/GND/SDI/SCK in firmly (joined wires slip), check the header pins are soldered, then press **EN**. Keep VIN on the ESP32 VIN pin. |
+| Impossible readings (e.g. 178 °C, −102 hPa) | The BME280 lost power for a moment; reseat its wires and press EN. |
+| OLED shows LOCAL | Wi-Fi failed: check hotspot name, password and 2.4 GHz. |
+| RAINING NOW flickers | Plate is only slightly wet; spread more water or lower `RAIN_WET_PERCENT`. |
+| Wrong LED lights | Swap the R/Y/G wires to match D27/D26/D25. |
+| Buzzer silent | Check S is on D13 (some modules label it I/O). |
 
-## 8. How it links to the cloud system
+## 7. Link to the cloud system
 
-| | Cloud system (GitHub Actions + dashboard) | Rain-alert station (ESP32) |
+| | Cloud system | Rain-alert station |
 |---|---|---|
-| Data source | Open-Meteo forecast API | Open-Meteo forecast API + BME280 + raindrop sensor |
+| Data source | Open-Meteo forecast API | Open-Meteo + BME280 + raindrop sensor |
 | Location | 4.36°N, 100.97°E | 4.36°N, 100.97°E |
-| Update rate | Every 30 min | Forecast every 10 min, sensors every 5 s |
-| Rain rule | ≥ 70% or ≥ 1.0 mm = red, ≥ 40% or ≥ 0.2 mm = amber | Same rule, plus RAINING NOW from the plate |
-| Works without internet | No | Yes (local humidity + pressure rule) |
+| Update rate | Scheduled every 30 min | Forecast every 10 min, sensors every 5 s |
+| Rain rule | ≥ 70% or ≥ 1.0 mm = red; ≥ 40% or ≥ 0.2 mm = amber | Same, plus RAINING NOW from the plate |
+| Works offline | No | Yes (local humidity + pressure rule) |
 | Output | Web dashboard, accuracy analysis | OLED, traffic light, buzzer |
